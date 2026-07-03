@@ -14,51 +14,47 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
 using System.Windows.Threading;
+using System.Management;
+using System.ServiceProcess;
 
 namespace OpsCoreControl
 {
-    public class DashBoard
-    {
-        private const int DashBoardIntervalRefresh = 2; // Интервал обнавления ДэшБорда
-        private PerformanceCounter ramUsage = new PerformanceCounter("Memory", "Available MBytes");
-        public Label _ramLoadLabel;
-        public event Action<float> RamUsageUpdated;
-
-        public DashBoard()
-        {
-            startDashBoard();
-        }
-        ~DashBoard()
-        {
-            ramUsage.Dispose();
-        }
-        public void startDashBoard()
-        {
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(DashBoardIntervalRefresh) };
-            timer.Tick += (s, e) => RefreshData();
-            timer.Start();
-        }
-
-        private void RefreshData()
-        {
-            RamUsageUpdated?.Invoke(ramUsage.NextValue());
-        }
-    }
-
     public partial class MainWindow : Window
     {
-
+        private DashBoard _dashBoard;
+        private ServiceManager _serviceManager;
         public MainWindow()
         {
             InitializeComponent();
+            
+            _dashBoard = new DashBoard();
 
-            DashBoard dashBoard = new DashBoard();
-            dashBoard.RamUsageUpdated += value => _ramLoadLabel.Content = value.ToString();
+            // RAM
+            _dashBoard.totalRam += value => _ramLoadLabel.Content = (value / (1024 * 1024)).ToString() + " / ";
+            _dashBoard.ramUsageUpdated += value => _ramLoadLabel.Content += value.ToString();
+
+            // VRAM
+            _dashBoard.virtualRamTotalUpdated += value => _virtualRamLoadLabel.Content = (value / (1024 * 1024)).ToString() + "MB / ";
+            _dashBoard.virtualRamUsageUpdated += value => _virtualRamLoadLabel.Content += value.ToString() + "MB";
+
+            // CPU
+            _dashBoard.cpUsageUpdated += value => _cpLoadLabel.Content = value.ToString();
+
+            // Free spacce
+            _dashBoard.freeSpaceUpdated += value => _freeSpaceLabel.Content = value.ToString();
+
+            this.Closed += (s, e) => _dashBoard.Dispose();
         }
 
         private void _testButton_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
+        {
+            _serviceManager = new ServiceManager();
+            _serviceManager.rebootPrintSpooler("spooler", this._restartPrintSpoolerButton);
         }
     }
 }

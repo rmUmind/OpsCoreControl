@@ -7,20 +7,31 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Label
-            x:Name="_ramLoadLabel"
-            Content="Getting Data"/>
-        <Button x:Name="_testButton"
-                Content="Test" RenderTransformOrigin="0.5,0.5" Click="_testButton_Click"
-                >
-            <Button.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform/>
-                    <SkewTransform/>
-                    <RotateTransform/>
-                    <TranslateTransform X="10" Y="100"/>
-                </TransformGroup>
-            </Button.RenderTransform>
-        </Button>
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Loaded Ram:"/>
+                <Label x:Name="_ramLoadLabel" Content="Getting ram data"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Loaded VRam:"/>
+                <Label x:Name="_virtualRamLoadLabel" Content="Getting ram data"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="CP usege:"/>
+                <Label  x:Name="_cpLoadLabel" Content="Getting CP data"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Free space:"/>
+                <Label x:Name="_freeSpaceLabel" Content="Getting free space data"/>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+            <ListBox/>
+        </StackPanel>
+        <StackPanel Orientation="Vertical" HorizontalAlignment ="Right">
+            <Button x:Name="_testButton" Content="Test" Click="_testButton_Click" Width="150" Height="50"/>
+            <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
+        </StackPanel>
+
     </Grid>
 </Window>

@@ -1,3 +1,6 @@
 <Solution>
-  <Project Path="OpsCoreControl/OpsCoreControl.csproj" />
+  <Folder Name="/Элементы решения/">
+    <File Path="DashBoard.cs" />
+  </Folder>
+  <Project Path="OpsCoreControl/OpsCoreControl.csproj" Id="bb0618b8-f07c-4fe2-8835-ac10757568d5" />
 </Solution>
