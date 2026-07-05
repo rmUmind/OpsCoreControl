@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Management;
+using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,10 +16,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Diagnostics;
 using System.Windows.Threading;
-using System.Management;
-using System.ServiceProcess;
+using System.IO;
+
 
 namespace OpsCoreControl
 {
@@ -26,7 +29,8 @@ namespace OpsCoreControl
         public MainWindow()
         {
             InitializeComponent();
-            
+
+
             _dashBoard = new DashBoard();
 
             // RAM
@@ -44,6 +48,16 @@ namespace OpsCoreControl
             _dashBoard.freeSpaceUpdated += value => _freeSpaceLabel.Content = value.ToString();
 
             this.Closed += (s, e) => _dashBoard.Dispose();
+
+            _serviceManager = new ServiceManager();
+
+            _mainChatListBox.Items.Add("test");
+            _serviceManager.ErrorMessage += message =>
+            {
+                Dispatcher.Invoke(() =>{
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
         }
 
         private void _testButton_Click(object sender, RoutedEventArgs e)
@@ -51,10 +65,14 @@ namespace OpsCoreControl
 
         }
 
-        private void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
+        private async void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
         {
-            _serviceManager = new ServiceManager();
-            _serviceManager.rebootPrintSpooler("spooler", this._restartPrintSpoolerButton);
+            if (sender is Button btn)
+                await btn.ExecuteWithColorAsync(() => _serviceManager.RebootPrintSpooler("Spooler"));
+        }
+        private async void _cleanDownloadFolder_Click(object sender, RoutedEventArgs e)
+        {
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender,  () => _serviceManager.CleanDownloadFolder());
         }
     }
 }

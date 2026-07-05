@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -11,9 +12,9 @@ namespace OpsCoreControl
         public ServiceManager() { }
         ~ServiceManager() { }
 
-        public async Task rebootPrintSpooler(string serviceName, Button btn)
+        public event Action<string> ErrorMessage;
+        public async Task<bool> RebootPrintSpooler(string serviceName)
         {
-            btn.Background = new SolidColorBrush(Colors.Yellow);
             try
             {
                 await Task.Run(() => {
@@ -26,15 +27,43 @@ namespace OpsCoreControl
                         }
                         svc.Start();
                         svc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+
                     }
-                    btn.Background = new SolidColorBrush(Colors.Green);
+                });
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage?.Invoke(ex.Message);
+                return false;
+            }
+            await Task.Delay(1000);
+            return true;
+        }
+
+        public async Task<bool> CleanDownloadFolder()
+        {
+            try
+            {
+                await Task.Run(() =>
+                {
+                    var path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    var files = Directory.GetFiles(path);
+                    var directorys = Directory.GetDirectories(path);
+                    foreach (var file in files)
+                    {
+                        File.Delete(file);
+                    }
+                    foreach (var directory in directorys)
+                    {
+                        Directory.Delete(directory, true);
+                    }
                 });
             }
             catch (Exception)
             {
-                btn.Background = new SolidColorBrush(Colors.Red);
-                throw;
+                return false;
             }
+            return true;
         }
     }
 }

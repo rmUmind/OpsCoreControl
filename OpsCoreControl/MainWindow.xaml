@@ -26,11 +26,12 @@
             </StackPanel>
         </StackPanel>
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-            <ListBox/>
+            <ListBox x:Name="_mainChatListBox" Width="300" Height="200"/>
         </StackPanel>
         <StackPanel Orientation="Vertical" HorizontalAlignment ="Right">
             <Button x:Name="_testButton" Content="Test" Click="_testButton_Click" Width="150" Height="50"/>
             <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
+            <Button x:Name="_cleanDownloadFolder" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click" Width="150" Height="50"/>
         </StackPanel>
 
     </Grid>
