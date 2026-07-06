@@ -63,8 +63,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ButtonHelper.cs" />
-    <Compile Include="ServiceManager.cs" />
+    <Compile Include="HelperClasses\ButtonHelper.cs" />
+    <Compile Include="HelperClasses\Logger.cs" />
+    <Compile Include="WorkingСlasses\ServiceManager.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -73,7 +74,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DashBoard.cs" />
+    <Compile Include="WorkingСlasses\DashBoard.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

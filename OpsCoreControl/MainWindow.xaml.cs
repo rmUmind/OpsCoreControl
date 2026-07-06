@@ -51,28 +51,67 @@ namespace OpsCoreControl
 
             _serviceManager = new ServiceManager();
 
-            _mainChatListBox.Items.Add("test");
-            _serviceManager.ErrorMessage += message =>
+            // Chat
+            Logger.LogMessage += message =>
             {
-                Dispatcher.Invoke(() =>{
+                Dispatcher.Invoke(() =>
+                {
                     _mainChatListBox.Items.Add(message);
+                });
+            };
+            Logger.LogError += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Logger.LogInfo += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Logger.LogSuccess += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Logger.LogProfile += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _usersProfilesListBox.Items.Add(message);
                 });
             };
         }
 
-        private void _testButton_Click(object sender, RoutedEventArgs e)
+        // Поправить
+        private async void _testButton_ClickAsync(object sender, RoutedEventArgs e)
         {
-
+            await _serviceManager.GetUserProfiles();
         }
 
         private async void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn)
-                await btn.ExecuteWithColorAsync(() => _serviceManager.RebootPrintSpooler("Spooler"));
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.RebootPrintSpooler("Spooler"));
         }
         private async void _cleanDownloadFolder_Click(object sender, RoutedEventArgs e)
         {
             await ButtonHelper.ExecuteWithColorAsync((Button)sender,  () => _serviceManager.CleanDownloadFolder());
+        }
+
+        private async void _deleteProfile_Click(object sender, RoutedEventArgs e)
+        {
+           
+        }
+
+        private void _usersProfilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }

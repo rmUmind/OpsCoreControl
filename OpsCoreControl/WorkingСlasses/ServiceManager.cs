@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.IO;
+using System.Security.Principal;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -9,10 +11,6 @@ namespace OpsCoreControl
 {
     internal class ServiceManager
     {
-        public ServiceManager() { }
-        ~ServiceManager() { }
-
-        public event Action<string> ErrorMessage;
         public async Task<bool> RebootPrintSpooler(string serviceName)
         {
             try
@@ -33,20 +31,21 @@ namespace OpsCoreControl
             }
             catch (Exception ex)
             {
-                ErrorMessage?.Invoke(ex.Message);
+                Logger.Log(ex.Message, Logger.LogEntryType.Error);
                 return false;
             }
-            await Task.Delay(1000);
+            Logger.Log($"Служба {serviceName} успешно перезапущена", Logger.LogEntryType.Success);
             return true;
         }
 
         public async Task<bool> CleanDownloadFolder()
         {
+            string path = "";
             try
             {
                 await Task.Run(() =>
                 {
-                    var path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
                     var files = Directory.GetFiles(path);
                     var directorys = Directory.GetDirectories(path);
                     foreach (var file in files)
@@ -63,7 +62,26 @@ namespace OpsCoreControl
             {
                 return false;
             }
+            Logger.Log($"Папка {path} отчишена", Logger.LogEntryType.Success);
             return true;
+        }
+
+        public async Task GetUserProfiles()
+        {
+            var path = "C:\\Users";
+            var directorys = Directory.GetDirectories(path);
+            foreach (var directory in directorys)
+                Logger.Log(directory, Logger.LogEntryType.Profile);
+
+            //const string profileListKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList";
+            //var profilesKey = Registry.LocalMachine.OpenSubKey(profileListKey);
+            //foreach (var sidString in profilesKey.GetSubKeyNames())
+            //{
+            //    var sid = new System.Security.Principal.SecurityIdentifier(sidString);
+            //    var ntAccount = (NTAccount)sid.Translate(typeof(NTAccount));
+            //    string userName = ntAccount.Value.ToString();
+            //    Logger.Log(userName);
+            //}
         }
     }
 }
