@@ -65,7 +65,11 @@
     </ApplicationDefinition>
     <Compile Include="HelperClasses\ButtonHelper.cs" />
     <Compile Include="HelperClasses\Logger.cs" />
+    <Compile Include="WorkingСlasses\FileCleanupManager.cs" />
+    <Compile Include="WorkingСlasses\NetworkManager.cs" />
     <Compile Include="WorkingСlasses\ServiceManager.cs" />
+    <Compile Include="WorkingСlasses\SoftwareUpdateManager.cs" />
+    <Compile Include="WorkingСlasses\UserProfileManager.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -18,6 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.IO;
+using OpsCoreControl.WorkingСlasses;
 
 
 namespace OpsCoreControl
@@ -25,7 +26,10 @@ namespace OpsCoreControl
     public partial class MainWindow : Window
     {
         private DashBoard _dashBoard;
+        private FileCleanupManager _fileCleanupManager;
+        private NetworkManager _networkManager;
         private ServiceManager _serviceManager;
+        private UserProfileManager _userProfileManager;
         public MainWindow()
         {
             InitializeComponent();
@@ -49,7 +53,10 @@ namespace OpsCoreControl
 
             this.Closed += (s, e) => _dashBoard.Dispose();
 
+            _fileCleanupManager = new FileCleanupManager();
+            _networkManager = new NetworkManager();
             _serviceManager = new ServiceManager();
+            _userProfileManager = new UserProfileManager();
 
             // Chat
             Logger.LogMessage += message =>
@@ -82,17 +89,22 @@ namespace OpsCoreControl
             };
             Logger.LogProfile += message =>
             {
-                Dispatcher.Invoke(() =>
+                HashSet<string> ignoreList = new HashSet<string>() {"C:\\Users\\Default", "C:\\Users\\All Users", "C:\\Users\\Default User", 
+                    "C:\\Users\\DefaultAppPool", "C:\\Users\\Все пользователи", "C:\\Users\\Public"};
+                if (!ignoreList.Contains(message))
                 {
-                    _usersProfilesListBox.Items.Add(message);
-                });
+                    Dispatcher.Invoke(() =>
+                    {
+                        _usersProfilesListBox.Items.Add(message);
+                    });
+                }
             };
         }
 
-        // Поправить
-        private async void _testButton_ClickAsync(object sender, RoutedEventArgs e)
+        private async void _showUsersProfiles_ClickAsync(object sender, RoutedEventArgs e)
         {
-            await _serviceManager.GetUserProfiles();
+            _usersProfilesListBox.Items.Clear();
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _userProfileManager.LoadUserProfiles());
         }
 
         private async void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
@@ -101,15 +113,37 @@ namespace OpsCoreControl
         }
         private async void _cleanDownloadFolder_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,  () => _serviceManager.CleanDownloadFolder());
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender,  () => _fileCleanupManager.CleanDownloadFolder());
         }
 
         private async void _deleteProfile_Click(object sender, RoutedEventArgs e)
         {
-           
+            try
+            {
+                var toDelete = _usersProfilesListBox.SelectedItems;
+                foreach (string item in toDelete)
+                {
+                    await _userProfileManager.DeleteProfileFolderAsync(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.Message, Logger.LogEntryType.Error);
+            }
+            Logger.Log("успешно удалено", Logger.LogEntryType.Success);
         }
 
         private void _usersProfilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _userProfilesCountLabel.Content = "Count: " + _usersProfilesListBox.SelectedItems.Count.ToString();
+        }
+
+        private async void _clearNonRedeemablePool_Click(object sender, RoutedEventArgs e)
+        {
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _networkManager.ClearNonPagedPool());
+        }
+
+        private void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
         {
 
         }

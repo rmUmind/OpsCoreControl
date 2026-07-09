@@ -5,36 +5,75 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpsCoreControl"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="600" Width="800">
     <Grid>
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Loaded Ram:"/>
-                <Label x:Name="_ramLoadLabel" Content="Getting ram data"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Loaded VRam:"/>
-                <Label x:Name="_virtualRamLoadLabel" Content="Getting ram data"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="CP usege:"/>
-                <Label  x:Name="_cpLoadLabel" Content="Getting CP data"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Free space:"/>
-                <Label x:Name="_freeSpaceLabel" Content="Getting free space data"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TabControl Grid.Row="0" TabStripPlacement="Left">
+            <TabItem Header="Sevices">
+                <StackPanel HorizontalAlignment="Left">
+                    <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Profile's">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="0">
+                        <Button x:Name="_showUsersProfilesButton" Content="_showUsersProfiles" Click="_showUsersProfiles_ClickAsync" Width="150" Height="50"/>
+                        <Button x:Name="_deleteProfileButton" Content="Delete Profile" Click="_deleteProfile_Click" Width="150" Height="50"/>
+                    </StackPanel>
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Label x:Name="_userProfilesCountLabel" Grid.Row="0" Content="Count: " HorizontalAlignment="Right"/>
+                        <ListBox x:Name="_usersProfilesListBox" Grid.Row="1" Width="300" SelectionMode ="Multiple" SelectionChanged="_usersProfilesListBox_SelectionChanged" HorizontalAlignment="Right"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Folder's work">
+                <StackPanel HorizontalAlignment="Left">
+                    <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click" Width="150" Height="50"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Network">
+                <StackPanel HorizontalAlignment="Left">
+                    <Button x:Name="_clearNonRedeemablePoolButton" Content="Clean non redemable pool" Click="_clearNonRedeemablePool_Click" Width="150" Height="50"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="App's">
+                <StackPanel HorizontalAlignment="Left">
+                    <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click" Width="150" Height="50"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+        
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
+            <ListBox x:Name="_mainChatListBox" Width="400" Height="100" HorizontalAlignment="Right" ScrollViewer.CanContentScroll="True"/>
+            <StackPanel Orientation="Vertical" HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Loaded Ram:"/>
+                    <Label x:Name="_ramLoadLabel" Content="Getting ram data"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Loaded VRam:"/>
+                    <Label x:Name="_virtualRamLoadLabel" Content="Getting ram data"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="CP usege:"/>
+                    <Label  x:Name="_cpLoadLabel" Content="Getting CP data"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Free space:"/>
+                    <Label x:Name="_freeSpaceLabel" Content="Getting free space data"/>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-            <ListBox x:Name="_mainChatListBox" Width="300" Height="200"/>
-            <ListBox x:Name="_usersProfilesListBox" Width="300" Height="200" SelectionMode ="Multiple"/>
-        </StackPanel>
-        <StackPanel Orientation="Vertical" HorizontalAlignment ="Right">
-            <Button x:Name="_showUsersProfiles" Content="Test" Click="_testButton_ClickAsync" Width="150" Height="50"/>
-            <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
-            <Button x:Name="_cleanDownloadFolder" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click" Width="150" Height="50"/>
-            <Button x:Name="_deleteProfile" Content="Delete Profile" Click="_deleteProfile_Click" Width="150" Height="50"/>
-        </StackPanel>
-
     </Grid>
 </Window>
