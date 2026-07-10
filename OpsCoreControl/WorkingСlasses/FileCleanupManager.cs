@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
 {
@@ -31,9 +32,9 @@ namespace OpsCoreControl.WorkingСlasses
             }
             catch (Exception ex)
             {
-                Logger.Log("Исключение удаление папки: " + ex.Message, Logger.LogEntryType.Error);
+                Log.Add("Исключение удаление папки: " + ex.Message, LogType.Error);
             }
-            Logger.Log($"Папка {path} отчишена", Logger.LogEntryType.Success);
+            Log.Add($"Папка {path} отчишена", LogType.Success);
             return true;
         }
     }

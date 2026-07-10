@@ -64,7 +64,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="HelperClasses\ButtonHelper.cs" />
-    <Compile Include="HelperClasses\Logger.cs" />
+    <Compile Include="HelperClasses\Log.cs" />
     <Compile Include="WorkingСlasses\FileCleanupManager.cs" />
     <Compile Include="WorkingСlasses\NetworkManager.cs" />
     <Compile Include="WorkingСlasses\ServiceManager.cs" />

@@ -7,7 +7,7 @@ using System.ServiceProcess;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
-using static OpsCoreControl.Logger;
+using static OpsCoreControl.Log;
 
 namespace OpsCoreControl
 {
@@ -31,12 +31,12 @@ namespace OpsCoreControl
                     }
                 });
 
-                Logger.Log($"Служба {serviceName} успешно перезапущена", Logger.LogEntryType.Success);
+                Log.Add($"Служба {serviceName} успешно перезапущена", LogType.Success);
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log($"Исключение при перезапуске службы: {serviceName} - " + ex.Message, Logger.LogEntryType.Error);
+                Log.Add($"Исключение при перезапуске службы: {serviceName} - " + ex.Message, LogType.Error);
                 return false;
             }  
         }

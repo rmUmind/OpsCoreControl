@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using static OpsCoreControl.Logger;
+using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
 {
     internal class UserProfileManager
     {
+
         public async Task<bool> DeleteProfileFolderAsync(string profilePath)
         {
             try
@@ -30,19 +32,19 @@ namespace OpsCoreControl.WorkingСlasses
                     await Task.Run(() => process.WaitForExit());
                     if (process.ExitCode == 0)
                     {
-                        Logger.Log($"Папка профиля удалена: {profilePath}", LogEntryType.Success);
+                        Log.Add($"Папка профиля удалена: {profilePath}", LogEntryType.Success);
                         return true;
                     }
                     else
                     {
-                        Logger.Log($"Ошибка удаления папки профиля (код {process.ExitCode}): {profilePath}", LogEntryType.Error);
+                        Log.Add($"Ошибка удаления папки профиля (код {process.ExitCode}): {profilePath}", LogEntryType.Error);
                         return false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Log($"Исключение при удалении папки профиля {profilePath}: {ex.Message}", LogEntryType.Error);
+                Log.Add($"Исключение при удалении папки профиля {profilePath}: {ex.Message}", LogEntryType.Error);
                 return false;
             }
         }
@@ -53,13 +55,13 @@ namespace OpsCoreControl.WorkingСlasses
                 var path = "C:\\Users";
                 var directorys = Directory.GetDirectories(path);
                 foreach (var directory in directorys)
-                    Logger.Log(directory, Logger.LogEntryType.Profile);
-                Logger.Log("Профили успешно получены", LogEntryType.Success);
+                    Log.Add(directory, LogType.Profile);
+                Log.Add("Профили успешно получены", LogEntryType.Success);
                 return true;
             }
             catch (Exception)
             {
-                Logger.Log("Исключение при получение профиля пользователя: ", Logger.LogEntryType.Success);
+                Log.Add("Исключение при получение профиля пользователя: ", LogType.Success);
                 return false;
             }
         }

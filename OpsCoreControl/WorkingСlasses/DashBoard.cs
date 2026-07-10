@@ -24,12 +24,10 @@ namespace OpsCoreControl
 
         public static ulong GetTotalPhysicalMemoryBytes()
         {
-            // Создаём объект-поисковик с WQL-запросом
             using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
             {
                 return searcher.Get().Cast<ManagementObject>().FirstOrDefault()?["TotalPhysicalMemory"] as ulong? ?? 0;
             }
-            return 0; // если ничего не нашли (маловероятно)
         }
         public ulong TotalRam = GetTotalPhysicalMemoryBytes();
         public event Action<ulong> totalRam;

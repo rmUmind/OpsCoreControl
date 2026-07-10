@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OpsCoreControl
 {
-    public static class Logger
+    public static class Log
     {
         public enum LogEntryType
         {
@@ -34,7 +34,7 @@ namespace OpsCoreControl
         public static event Action<string> LogSuccess;
         public static event Action<string> LogInfo;
         public static event Action<string> LogDebug;
-        public static void Log(string message, LogEntryType type)
+        public static void Add(string message, LogEntryType type)
         {
             switch (type)
             {
@@ -54,7 +54,7 @@ namespace OpsCoreControl
                     LogInfo?.Invoke(message);
                     break;
                 case LogEntryType.Debug:
-                        LogInfo?.Invoke(message);
+                        LogDebug?.Invoke(message);
                     break;
                 default:
                     break;

@@ -4,13 +4,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static OpsCoreControl.Logger;
+using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
 {
     internal class NetworkManager
     {
-        public async Task<bool> ClearNonPagedPool()
+        public async Task<bool> ClearNonPagedPool ()
         {
             try
             {
@@ -28,12 +28,12 @@ namespace OpsCoreControl.WorkingСlasses
                     await Task.Run(() => process.WaitForExit());
                     if (process.ExitCode == 0)
                     {
-                        Logger.Log("Невыгружаемый пул успешно удален", Logger.LogEntryType.Success);
+                        Log.Add("Невыгружаемый пул успешно удален", LogType.Success);
                         return true;
                     }
                     else
                     {
-                        Logger.Log($"Ошибка при удаление папки профился. Код {process.ExitCode}", Logger.LogEntryType.Error);
+                        Log.Add($"Ошибка при удаление папки профился. Код {process.ExitCode}", LogType.Error);
                         return false;
                     }
                 }
@@ -41,7 +41,7 @@ namespace OpsCoreControl.WorkingСlasses
             }
             catch (Exception ex)
             {
-                Logger.Log($"Исключение при удаление невыгружаемого пула: {ex.Message}", LogEntryType.Error);
+                Log.Add($"Исключение при удаление невыгружаемого пула: {ex.Message}", LogEntryType.Error);
                 return false;
             }
         }

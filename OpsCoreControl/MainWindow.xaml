@@ -48,9 +48,17 @@
                 </StackPanel>
             </TabItem>
             <TabItem Header="App's">
-                <StackPanel HorizontalAlignment="Left">
-                    <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click" Width="150" Height="50"/>
-                </StackPanel>
+                <Grid>
+                    <StackPanel HorizontalAlignment="Left">
+                        <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click" Width="150" Height="50"/>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <Button x:Name="_tamplateButtonDesktopDirectroy" Content="Рабочий стол" Width="150" Height="50" Click="_tamplateButtonDesktopDirectroy_Click"/>
+                        <Button x:Name="_tamplateButtonDownloadDirectory" Content="Загрузки" Width="150" Height="50" Click="_tamplateButtonDownloadDirectory_Click"/>
+                        <Label Content="Укажите директорию для сохранения"/>
+                        <TextBox x:Name="_downloadDirectoryTextBox"/>
+                    </StackPanel>
+                </Grid>
             </TabItem>
         </TabControl>
         

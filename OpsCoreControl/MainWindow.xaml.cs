@@ -19,7 +19,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.IO;
 using OpsCoreControl.WorkingСlasses;
-
+using static OpsCoreControl.Log;
 
 namespace OpsCoreControl
 {
@@ -29,6 +29,7 @@ namespace OpsCoreControl
         private FileCleanupManager _fileCleanupManager;
         private NetworkManager _networkManager;
         private ServiceManager _serviceManager;
+        private SoftwareUpdateManager _softwareUpdateManager;
         private UserProfileManager _userProfileManager;
         public MainWindow()
         {
@@ -56,38 +57,39 @@ namespace OpsCoreControl
             _fileCleanupManager = new FileCleanupManager();
             _networkManager = new NetworkManager();
             _serviceManager = new ServiceManager();
+            _softwareUpdateManager = new SoftwareUpdateManager();
             _userProfileManager = new UserProfileManager();
 
             // Chat
-            Logger.LogMessage += message =>
+            Log.LogMessage += message =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     _mainChatListBox.Items.Add(message);
                 });
             };
-            Logger.LogError += message =>
+            Log.LogError += message =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     _mainChatListBox.Items.Add(message);
                 });
             };
-            Logger.LogInfo += message =>
+            Log.LogInfo += message =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     _mainChatListBox.Items.Add(message);
                 });
             };
-            Logger.LogSuccess += message =>
+            Log.LogSuccess += message =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     _mainChatListBox.Items.Add(message);
                 });
             };
-            Logger.LogProfile += message =>
+            Log.LogProfile += message =>
             {
                 HashSet<string> ignoreList = new HashSet<string>() {"C:\\Users\\Default", "C:\\Users\\All Users", "C:\\Users\\Default User", 
                     "C:\\Users\\DefaultAppPool", "C:\\Users\\Все пользователи", "C:\\Users\\Public"};
@@ -98,6 +100,13 @@ namespace OpsCoreControl
                         _usersProfilesListBox.Items.Add(message);
                     });
                 }
+            };
+            Log.LogDebug += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
             };
         }
 
@@ -128,9 +137,9 @@ namespace OpsCoreControl
             }
             catch (Exception ex)
             {
-                Logger.Log(ex.Message, Logger.LogEntryType.Error);
+                Log.Add(ex.Message, LogType.Error);
             }
-            Logger.Log("успешно удалено", Logger.LogEntryType.Success);
+            Log.Add("успешно удалено", LogType.Success);
         }
 
         private void _usersProfilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -143,9 +152,25 @@ namespace OpsCoreControl
             await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _networkManager.ClearNonPagedPool());
         }
 
-        private void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
+        private async void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
         {
+            await _softwareUpdateManager.RunEmbeddedInstallerAsync();
+        }
 
+        private void _tamplateButtonDesktopDirectroy_Click(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _downloadDirectoryTextBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            });
+        }
+
+        private void _tamplateButtonDownloadDirectory_Click(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+            _downloadDirectoryTextBox.Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            });
         }
     }
 }
