@@ -15,6 +15,7 @@
             <TabItem Header="Sevices">
                 <StackPanel HorizontalAlignment="Left">
                     <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
+                    <Button x:Name="_rebootPC" Content="Reboot" Click="_rebootPC_Click" Width="150" Height="50"/>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Profile's">
@@ -47,7 +48,7 @@
                     <Button x:Name="_clearNonRedeemablePoolButton" Content="Clean non redemable pool" Click="_clearNonRedeemablePool_Click" Width="150" Height="50"/>
                 </StackPanel>
             </TabItem>
-            <TabItem Header="App's">
+            <TabItem Header="Software">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
                         <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click" Width="150" Height="50"/>
@@ -57,6 +58,14 @@
                         <Button x:Name="_tamplateButtonDownloadDirectory" Content="Загрузки" Width="150" Height="50" Click="_tamplateButtonDownloadDirectory_Click"/>
                         <Label Content="Укажите директорию для сохранения"/>
                         <TextBox x:Name="_downloadDirectoryTextBox"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="System settings">
+                <Grid>
+                    <StackPanel HorizontalAlignment="Left">
+                        <Button x:Name="_setScreenLockTimerButton" Content="_setScreenLockTimer" Click="_setScreenLockTimerButton_Click" Height="50" Width="150"/>
+                        <TextBox x:Name="_timeToScreenLockTimerLabel"/>
                     </StackPanel>
                 </Grid>
             </TabItem>

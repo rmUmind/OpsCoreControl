@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using OpsCoreControl.HelperClasses;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -13,6 +14,11 @@ namespace OpsCoreControl
 {
     internal class ServiceManager
     {
+        public async Task<bool> rebootPC()
+        {
+            var psi = ConsoleHelper.cmdConsoleCommand("$\"/c shutdown /r\"");
+            return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет перезагружен через 1 минуту", "Не удалось перезагрузить компьютер");
+        }
         public async Task<bool> RebootPrintSpooler(string serviceName)
         {
             try
@@ -27,10 +33,8 @@ namespace OpsCoreControl
                         }
                         svc.Start();
                         svc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
-
                     }
                 });
-
                 Log.Add($"Служба {serviceName} успешно перезапущена", LogType.Success);
                 return true;
             }

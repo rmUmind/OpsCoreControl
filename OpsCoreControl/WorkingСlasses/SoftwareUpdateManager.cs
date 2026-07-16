@@ -11,7 +11,7 @@ using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
 {
-    internal class SoftwareUpdateManager
+    internal class SoftwareManager
     {
         public async Task<bool> RunEmbeddedInstallerAsync(string resourceName, string fileName)
         {

@@ -1,9 +1,12 @@
-﻿using System;
+﻿using OpsCoreControl.WorkingСlasses;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,9 +20,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using System.IO;
-using OpsCoreControl.WorkingСlasses;
 using static OpsCoreControl.Log;
+using System.Runtime.InteropServices;
 
 namespace OpsCoreControl
 {
@@ -29,8 +31,9 @@ namespace OpsCoreControl
         private FileCleanupManager _fileCleanupManager;
         private NetworkManager _networkManager;
         private ServiceManager _serviceManager;
-        private SoftwareUpdateManager _softwareUpdateManager;
+        private SoftwareManager _softwareManager;
         private UserProfileManager _userProfileManager;
+        private SystemSettingsManager _systemSettingsManager;
         public MainWindow()
         {
             InitializeComponent();
@@ -57,8 +60,9 @@ namespace OpsCoreControl
             _fileCleanupManager = new FileCleanupManager();
             _networkManager = new NetworkManager();
             _serviceManager = new ServiceManager();
-            _softwareUpdateManager = new SoftwareUpdateManager();
+            _softwareManager = new SoftwareManager();
             _userProfileManager = new UserProfileManager();
+            _systemSettingsManager = new SystemSettingsManager();
 
             // Chat
             Log.LogMessage += message =>
@@ -154,7 +158,12 @@ namespace OpsCoreControl
 
         private async void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
         {
-            await _softwareUpdateManager.RunEmbeddedInstallerAsync();
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, async () =>
+            {
+                return await _softwareManager.RunEmbeddedInstallerAsync(
+                    "OpsCoreControl.Programs.CryptoPro-5.0.13800.exe",   // точное имя ресурса
+                    "CryptoProCSP_installer.exe");                 // имя временного файла
+            });
         }
 
         private void _tamplateButtonDesktopDirectroy_Click(object sender, RoutedEventArgs e)
@@ -171,6 +180,17 @@ namespace OpsCoreControl
             {
             _downloadDirectoryTextBox.Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             });
+        }
+
+        private async void _rebootPC_Click(object sender, RoutedEventArgs e)
+        {
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.rebootPC());
+        }
+        private async void _setScreenLockTimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            int mitutes;
+            if (!int.TryParse(_timeToScreenLockTimerLabel.Text, out mitutes)) { mitutes = 10; }
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => Task.Run(() => _systemSettingsManager.SetScreenLockTimeout(Convert.ToInt32(mitutes))));
         }
     }
 }

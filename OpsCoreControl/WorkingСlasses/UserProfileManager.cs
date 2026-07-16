@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpsCoreControl.HelperClasses;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,38 +16,8 @@ namespace OpsCoreControl.WorkingСlasses
 
         public async Task<bool> DeleteProfileFolderAsync(string profilePath)
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c rmdir /s /q \"{profilePath}\"",
-                    UseShellExecute = true,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    Verb = "runas"
-                };
-
-                using (var process = Process.Start(psi))
-                {
-                    await Task.Run(() => process.WaitForExit());
-                    if (process.ExitCode == 0)
-                    {
-                        Log.Add($"Папка профиля удалена: {profilePath}", LogEntryType.Success);
-                        return true;
-                    }
-                    else
-                    {
-                        Log.Add($"Ошибка удаления папки профиля (код {process.ExitCode}): {profilePath}", LogEntryType.Error);
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Add($"Исключение при удалении папки профиля {profilePath}: {ex.Message}", LogEntryType.Error);
-                return false;
-            }
+            var psi = ConsoleHelper.cmdConsoleCommand("/c rmdir /s /q \"{profilePath}\"");
+            return await ConsoleHelper.LookForProcessEnd(psi, "Папка профиля удалена.", "Ошибка удаления папки профиля.", "Исключение при удалении папки профиля.");
         }
         public async Task<bool> LoadUserProfiles()
         {
