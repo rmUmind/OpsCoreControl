@@ -1,9 +1,27 @@
-# Игнорировать всё
-*
+# Папки сборки
+bin/
+obj/
+*.user
+*.suo
+*.pdb
+*.cache
 
-# Кроме папок (чтобы структура директорий сохранялась)
-!*/
+# Временные файлы Visual Studio
+.vs/
+*.userosscache
+*.sln.docstates
 
-# Разрешить файлы .cs и .xaml
-!*.cs
-!*.xaml
+# Результаты тестов
+TestResults/
+[Tt]est[Rr]esults*
+
+# Сборки
+*.dll
+*.exe
+
+# NuGet
+packages/
+*.nupkg
+
+# Локальные настройки
+appsettings.local.json
