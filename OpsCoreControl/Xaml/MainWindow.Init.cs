@@ -1,0 +1,102 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using OpsCoreControl.WorkingСlasses;
+using static OpsCoreControl.Log;
+
+namespace OpsCoreControl
+{
+    public partial class MainWindow : Window
+    {
+        private DashBoard _dashBoard;
+        private FileSystemManager _fileSystemManager;
+        private NetworkManager _networkManager;
+        private ServiceManager _serviceManager;
+        private SoftwareManager _softwareManager;
+        private UserProfileManager _userProfileManager;
+        private SystemSettingsManager _systemSettingsManager;
+        private PhysicalMonitorBrightnessController _monitorController;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+
+
+            _dashBoard = new DashBoard();
+
+            // RAM
+            _dashBoard.totalRam += value => _ramLoadLabel.Content = (value / (1024 * 1024)).ToString() + " / ";
+            _dashBoard.ramUsageUpdated += value => _ramLoadLabel.Content += Math.Round((float)value).ToString() + " MB";
+
+            // VRAM
+            _dashBoard.virtualRamTotalUpdated += value => _virtualRamLoadLabel.Content = Math.Round((float)(value / (1024 * 1024))).ToString() + " / ";
+            _dashBoard.virtualRamUsageUpdated += value => _virtualRamLoadLabel.Content += Math.Round((float)value).ToString() + " MB";
+
+            // CPU
+            _dashBoard.cpUsageUpdated += value => _cpLoadLabel.Content = Math.Round((float)value).ToString() + "%";
+
+            // Free spacce
+            _dashBoard.freeSpaceUpdated += value => _freeSpaceLabel.Content = Math.Round((float)value).ToString() + "%";
+
+            this.Closed += (s, e) => _dashBoard.Dispose();
+
+            _fileSystemManager = new FileSystemManager();
+            _networkManager = new NetworkManager();
+            _serviceManager = new ServiceManager();
+            _softwareManager = new SoftwareManager();
+            _userProfileManager = new UserProfileManager();
+            _systemSettingsManager = new SystemSettingsManager();
+            _monitorController = new PhysicalMonitorBrightnessController();
+
+            // Chat
+            Log.LogMessage += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Log.LogError += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Log.LogInfo += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Log.LogSuccess += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+            Log.LogProfile += message =>
+            {
+                HashSet<string> ignoreList = new HashSet<string>() {"C:\\Users\\Default", "C:\\Users\\All Users", "C:\\Users\\Default User",
+                    "C:\\Users\\DefaultAppPool", "C:\\Users\\Все пользователи", "C:\\Users\\Public"};
+                if (!ignoreList.Contains(message))
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        _usersProfilesListBox.Items.Add(message);
+                    });
+                }
+            };
+            Log.LogDebug += message =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _mainChatListBox.Items.Add(message);
+                });
+            };
+        }
+    }
+}

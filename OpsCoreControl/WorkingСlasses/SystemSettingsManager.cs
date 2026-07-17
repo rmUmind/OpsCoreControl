@@ -1,16 +1,29 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using static OpsCoreControl.Log;
 using System.Runtime.InteropServices;
-using System.IO;
+using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
 {
     internal class SystemSettingsManager
     {
         private const string DesktopKey = @"Control Panel\Desktop";
+
+        // P/Invoke для SystemParametersInfo
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SystemParametersInfo(int uiAction, int uiParam, IntPtr pvParam, int fWinIni);
+
+        // Константы
+        private const int SPI_SETSCREENSAVEACTIVE = 0x0011;
+        private const int SPIF_UPDATEINIFILE = 0x01;
+        private const int SPIF_SENDWININICHANGE = 0x02;
+
+        /// <summary>
+        /// Устанавливает время бездействия до блокировки экрана (скринсейвер с паролем).
+        /// Работает на Windows 7/10/11. Изменения применяются мгновенно.
+        /// </summary>
+        /// <param name="minutes">Время в минутах (минимум 1)</param>
         public bool SetScreenLockTimeout(int minutes)
         {
             try
@@ -18,20 +31,17 @@ namespace OpsCoreControl.WorkingСlasses
                 int seconds = minutes * 60;
                 if (seconds < 60) seconds = 60;
 
-                // Путь к стандартной чёрной заставке (проверяем наличие)
-                string screenSaverPath = Path.Combine(Environment.SystemDirectory, "scrnsave.scr");
-                if (!File.Exists(screenSaverPath))
-                {
-                    // Если по какой-то причине нет, можно указать другой, но scrnsave.scr всегда есть
-                    screenSaverPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "scrnsave.scr");
-                }
+                // Путь к стандартной чёрной заставке в System32 (без проверки File.Exists)
+                string screenSaverPath = @"C:\Windows\System32\scrnsave.scr";
+
+                Log.Add($"Устанавливаем скринсейвер: {screenSaverPath}, таймаут: {seconds} сек.", LogType.Info);
 
                 // Запись в реестр
                 using (var key = Registry.CurrentUser.OpenSubKey(DesktopKey, writable: true))
                 {
                     if (key == null)
                     {
-                        Log.Add("Не удалось открыть раздел реестра для настроек рабочего стола", LogType.Error);
+                        Log.Add("Не удалось открыть раздел реестра Control Panel\\Desktop", LogType.Error);
                         return false;
                     }
 
@@ -41,27 +51,26 @@ namespace OpsCoreControl.WorkingСlasses
                     key.SetValue("ScreenSaveTimeOut", seconds.ToString(), RegistryValueKind.String);
                 }
 
-                // Уведомление системы о необходимости перечитать настройки заставки
-                // SPI_SETSCREENSAVEACTIVE включает заставку с новыми параметрами
-                const int SPI_SETSCREENSAVEACTIVE = 0x0011;
-                const int SPIF_UPDATEINIFILE = 0x01;
-                const int SPIF_SENDWININICHANGE = 0x02;
+                // Включаем заставку с новыми параметрами
+                bool success = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, 1, IntPtr.Zero, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+                if (!success)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    Log.Add($"SystemParametersInfo не удался (код ошибки: {error})", LogType.Error);
+                    return false;
+                }
 
-                // Включаем заставку с обновлением из реестра
-                SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, 1, IntPtr.Zero, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+                // Принудительное обновление пользовательских параметров (работает сразу)
+                Process.Start("rundll32.exe", "user32.dll,UpdatePerUserSystemParameters");
 
-                Log.Add($"Время до блокировки экрана установлено: {minutes} мин. ({seconds} сек.)", LogType.Success);
+                Log.Add($"Время до блокировки экрана установлено: {minutes} мин.", LogType.Success);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Add($"Ошибка установки времени блокировки экрана: {ex.Message}", LogType.Error);
+                Log.Add($"Ошибка установки времени блокировки: {ex.Message}", LogType.Error);
                 return false;
             }
         }
-
-        // P/Invoke объявление
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SystemParametersInfo(int uiAction, int uiParam, IntPtr pvParam, int fWinIni);
     }
 }

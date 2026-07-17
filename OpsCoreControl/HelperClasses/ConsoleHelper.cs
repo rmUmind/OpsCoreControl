@@ -16,7 +16,8 @@ namespace OpsCoreControl.HelperClasses
             {
                 FileName = "cmd.exe",
                 Arguments = command,
-                UseShellExecute = true,
+                UseShellExecute = false,
+                RedirectStandardError = true,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
                 Verb = "runas"
@@ -38,7 +39,7 @@ namespace OpsCoreControl.HelperClasses
                     }
                     else
                     {
-                        Log.Add(badOutcome + $" (код {process.ExitCode})", LogEntryType.Error);
+                        Log.Add(badOutcome + $" (код {process.ExitCode} | {process.StandardError.ReadToEnd()})", LogEntryType.Error);
                         return false;
                     }
                 }

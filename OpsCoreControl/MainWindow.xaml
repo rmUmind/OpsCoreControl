@@ -16,6 +16,7 @@
                 <StackPanel HorizontalAlignment="Left">
                     <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
                     <Button x:Name="_rebootPC" Content="Reboot" Click="_rebootPC_Click" Width="150" Height="50"/>
+                    <Button x:Name="_shutdownPC" Content="Shutdown" Click="_shutdownPC_Click"  Width="150" Height="50"/>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Profile's">
@@ -39,9 +40,16 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Folder's work">
-                <StackPanel HorizontalAlignment="Left">
-                    <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click" Width="150" Height="50"/>
-                </StackPanel>
+                <Grid>
+                    <StackPanel HorizontalAlignment="Left">
+                        <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click" Width="150" Height="50"/>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Right">
+                        <Button x:Name="_openNetworkPathButton" Content="_cleanDownloadFolder" Click="_openNetworkPathButton_Click" Width="150" Height="50"/>
+                        <Label Content="Введите адрес папки"/>
+                        <TextBox x:Name="_openNetworkPathTextBox"/>
+                    </StackPanel>
+                </Grid>
             </TabItem>
             <TabItem Header="Network">
                 <StackPanel HorizontalAlignment="Left">
@@ -65,7 +73,14 @@
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
                         <Button x:Name="_setScreenLockTimerButton" Content="_setScreenLockTimer" Click="_setScreenLockTimerButton_Click" Height="50" Width="150"/>
-                        <TextBox x:Name="_timeToScreenLockTimerLabel"/>
+                        <Label Content="Введи время в минутах"/>
+                        <TextBox x:Name="_timeToScreenLockTimerTextBox"/>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Right">
+                        <Label Content="Только для ноутбуков"/>
+                        <Button x:Name="_setMonitorBrightnessButton" Content="Установить яркость монитора (ноутубуки)" Click="_setMonitorBrightnessButton_Click" Height="50" Width="150"/>
+                        <Label Content="Введи значение яркости"/>
+                        <TextBox x:Name="_setMonitorBrightnessTextBox" Text="100"/>
                     </StackPanel>
                 </Grid>
             </TabItem>

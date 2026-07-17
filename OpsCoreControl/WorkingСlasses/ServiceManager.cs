@@ -16,9 +16,16 @@ namespace OpsCoreControl
     {
         public async Task<bool> rebootPC()
         {
-            var psi = ConsoleHelper.cmdConsoleCommand("$\"/c shutdown /r\"");
-            return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет перезагружен через 1 минуту", "Не удалось перезагрузить компьютер");
+            var psi = ConsoleHelper.cmdConsoleCommand("$\"/c shutdown /r /t 0 /f\"");
+            return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет перезагружен.", "Не удалось перезагрузить компьютер");
         }
+
+        public async Task<bool> shutdownPC()
+        {
+            var psi = ConsoleHelper.cmdConsoleCommand("$\"/c shutdown /s /t 0 /f\"");
+            return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет выключен.", "Не удалось перезагрузить компьютер");
+        }
+
         public async Task<bool> RebootPrintSpooler(string serviceName)
         {
             try

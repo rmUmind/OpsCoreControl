@@ -66,12 +66,20 @@
     <Compile Include="HelperClasses\ButtonHelper.cs" />
     <Compile Include="HelperClasses\ConsoleHelper.cs" />
     <Compile Include="HelperClasses\Log.cs" />
-    <Compile Include="WorkingСlasses\FileCleanupManager.cs" />
+    <Compile Include="WorkingСlasses\FileSystemManager.cs" />
+    <Compile Include="WorkingСlasses\PhysicalMonitorBrightnessController.cs" />
     <Compile Include="WorkingСlasses\NetworkManager.cs" />
     <Compile Include="WorkingСlasses\ServiceManager.cs" />
     <Compile Include="WorkingСlasses\SoftwareUpdateManager.cs" />
     <Compile Include="WorkingСlasses\SystemSettingsManager.cs" />
     <Compile Include="WorkingСlasses\UserProfileManager.cs" />
+    <Compile Include="Xaml\MainWindow.Folder.cs" />
+    <Compile Include="Xaml\MainWindow.Init.cs" />
+    <Compile Include="Xaml\MainWindow.Network.cs" />
+    <Compile Include="Xaml\MainWindow.Profile.cs" />
+    <Compile Include="Xaml\MainWindow.Services.cs" />
+    <Compile Include="Xaml\MainWindow.Software.cs" />
+    <Compile Include="Xaml\MainWindow.SystemSettings.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -104,6 +112,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include=".gitignore" />
     <None Include="app.manifest" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -117,5 +126,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Programs\CryptoPro-5.0.13800.exe" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

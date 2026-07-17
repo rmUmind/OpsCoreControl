@@ -1,0 +1,27 @@
+# Папки сборки
+bin/
+obj/
+*.user
+*.suo
+*.pdb
+*.cache
+
+# Временные файлы Visual Studio
+.vs/
+*.userosscache
+*.sln.docstates
+
+# Результаты тестов
+TestResults/
+[Tt]est[Rr]esults*
+
+# Сборки
+*.dll
+*.exe
+
+# NuGet
+packages/
+*.nupkg
+
+# Локальные настройки
+appsettings.local.json

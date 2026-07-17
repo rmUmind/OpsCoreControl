@@ -62,6 +62,8 @@ namespace OpsCoreControl
             RamUsage.Dispose();
             CPUsage.Dispose();
             VirtualRamUsage.Dispose();
+            FreeSpace.Dispose();
+            GetVirtualRamTotal.Dispose();
         }
         public void startDashBoard()
         {
