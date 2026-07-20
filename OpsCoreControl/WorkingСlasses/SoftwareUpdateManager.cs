@@ -7,6 +7,9 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
+
+
 using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
@@ -15,6 +18,12 @@ namespace OpsCoreControl.WorkingСlasses
     {
         public async Task<bool> RunEmbeddedInstallerAsync(string resourceName, string fileName)
         {
+            if (!IsEmbeddedResourceAvailable(resourceName))
+            {
+                Log.Add($"Встроенный ресурс не найден: {resourceName}. Возможно, файл не добавлен в проект.", LogType.Error);
+                return false;
+            }
+
             string tempFilePath = null;
             try
             {
@@ -81,8 +90,7 @@ namespace OpsCoreControl.WorkingСlasses
                 return false;
             }
             finally
-            { }
-    ;
+            { };
         }
         public async Task<bool> DownloadFileAsync(string url, string directory, string fileName = null)
         {
@@ -121,6 +129,14 @@ namespace OpsCoreControl.WorkingСlasses
             {
                 Log.Add($"Исключение при скачивании файла: {ex.Message}", LogType.Error);
                 return false;
+            }
+        }
+        public bool IsEmbeddedResourceAvailable(string resourceName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                return stream != null;
             }
         }
     }

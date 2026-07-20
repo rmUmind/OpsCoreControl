@@ -123,9 +123,10 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Programs\CryptoPro-5.0.13800.exe" />
-  </ItemGroup>
+<ItemGroup>
+  <EmbeddedResource Include="Programs\CryptoPro-5.0.13800.exe" 
+                    Condition="Exists('Programs\CryptoPro-5.0.13800.exe')" />
+</ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
