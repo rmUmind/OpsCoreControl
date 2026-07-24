@@ -69,7 +69,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="System settings">
+            <TabItem Header="System settings" Margin="-2,-2,0,2">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
                         <Button x:Name="_setScreenLockTimerButton" Content="_setScreenLockTimer" Click="_setScreenLockTimerButton_Click" Height="50" Width="150"/>
@@ -82,6 +82,31 @@
                         <Label Content="Введи значение яркости"/>
                         <TextBox x:Name="_setMonitorBrightnessTextBox" Text="100"/>
                     </StackPanel>
+                    <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="200" Width="680" >
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                            <Label Content="Файл подкачки (pagefile)"/>
+                            <ListBox x:Name="_pageFileInfoListBox" Width="450" Height="100"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button x:Name="_refreshPageFileInfoButton" Content="Обновить" Width="150" Height="50" Click="_refreshPageFileInfoButton_Click"/>
+                                <Button x:Name="_clearPageFileButton" Content="Очистить" Width="150" Height="50" Click="_clearPageFileButton_Click"/>
+                                <Button x:Name="_setPageFileAutoButton" Content="По выбору системы" Width="150" Height="50" Click="_setPageFileAutoButton_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Button x:Name="_setVirtualRamButton" Content="setVram" Height="50" Width="150" HorizontalAlignment="Right" VerticalAlignment="Top" Click="_setVirtualRamButton_Click"/>
+                        <Label x:Name="_setVirtualRamLabel" Content="Выбери диск и укажы желаемый размер" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Label x:Name="_minimumVirtualRamLabel" Content="min"/>
+                                <TextBox x:Name="_minimumVirtualRamTextBox" Width="100" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Label x:Name="_maximumVirtualRamLabel" Content="min"/>
+                                <TextBox x:Name="_maximumVirtualRamTextBox" Width="100" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </Grid>
+                        <Button x:Name="_setVirtualRamFindDisks" Content="Find disks" Height="50" Width="150" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="_setVirtualRamFindDisks_Click"/>
+                        <ListBox x:Name="_setVirualRamSelectedDiskListBox" Width="200" Height="50" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                    </Grid>
                 </Grid>
             </TabItem>
         </TabControl>
