@@ -8,6 +8,7 @@ using System.Linq;
 using System.Management;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Shell;
 using static OpsCoreControl.Log;
 
 namespace OpsCoreControl.WorkingСlasses
@@ -42,6 +43,54 @@ namespace OpsCoreControl.WorkingСlasses
             return true;
         }
 
+        public async Task<bool> CleanTempFolder()
+        {
+            var paths = new List<string>
+                    {
+                    Path.GetTempPath(),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp")
+                    };
+
+            await Task.Run(() =>
+            {
+                foreach (var path in paths)
+                {
+                    if (!Directory.Exists(path))
+                    {
+                        Log.Add($"Папка не найдена: {path}", LogType.Info);
+                        continue;
+                    }
+
+                    int deleted = 0;
+                    int skipped = 0;
+
+                    foreach (string file in Directory.GetFiles(path))
+                    {
+                        try
+                        {
+                            File.SetAttributes(file, FileAttributes.Normal);
+                            File.Delete(file);
+                            deleted++;
+                        }
+                        catch { skipped++; }
+                    }
+
+                    foreach (string dir in Directory.GetDirectories(path))
+                    {
+                        try
+                        {
+                            Directory.Delete(dir, true);
+                            deleted++;
+                        }
+                        catch { skipped++; }
+                    }
+
+                    Log.Add($"Очистка {path}: удалено {deleted}, пропущено {skipped}.", LogType.Success);
+                }
+            });
+
+            return true;
+        }
         public async Task<bool> OpenNetworkPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))

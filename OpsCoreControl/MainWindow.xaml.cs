@@ -11,6 +11,9 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
-      
+        private async void _cleadTempFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _fileSystemManager.CleanTempFolder());
+        }
     }
 }

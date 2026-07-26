@@ -42,10 +42,11 @@
             <TabItem Header="Folder's work">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
-                        <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click" Width="150" Height="50"/>
+                        <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click"/>
+                        <Button x:Name="_cleadTempFolderButton" Content="Clean Temp" Click="_cleadTempFolderButton_Click"/>
                     </StackPanel>
                     <StackPanel HorizontalAlignment="Right">
-                        <Button x:Name="_openNetworkPathButton" Content="_cleanDownloadFolder" Click="_openNetworkPathButton_Click" Width="150" Height="50"/>
+                        <Button x:Name="_openNetworkPathButton" Content="_cleanDownloadFolder" Click="_openNetworkPathButton_Click"/>
                         <Label Content="Введите адрес папки"/>
                         <TextBox x:Name="_openNetworkPathTextBox"/>
                     </StackPanel>
@@ -53,17 +54,17 @@
             </TabItem>
             <TabItem Header="Network">
                 <StackPanel HorizontalAlignment="Left">
-                    <Button x:Name="_clearNonRedeemablePoolButton" Content="Clean non redemable pool" Click="_clearNonRedeemablePool_Click" Width="150" Height="50"/>
+                    <Button x:Name="_clearNonRedeemablePoolButton" Content="Clean non redemable pool" Click="_clearNonRedeemablePool_Click" />
                 </StackPanel>
             </TabItem>
             <TabItem Header="Software">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
-                        <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click" Width="150" Height="50"/>
+                        <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click"/>
                     </StackPanel>
                     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                        <Button x:Name="_tamplateButtonDesktopDirectroy" Content="Рабочий стол" Width="150" Height="50" Click="_tamplateButtonDesktopDirectroy_Click"/>
-                        <Button x:Name="_tamplateButtonDownloadDirectory" Content="Загрузки" Width="150" Height="50" Click="_tamplateButtonDownloadDirectory_Click"/>
+                        <Button x:Name="_tamplateButtonDesktopDirectroy" Content="Рабочий стол"  Click="_tamplateButtonDesktopDirectroy_Click"/>
+                        <Button x:Name="_tamplateButtonDownloadDirectory" Content="Загрузки" Click="_tamplateButtonDownloadDirectory_Click"/>
                         <Label Content="Укажите директорию для сохранения"/>
                         <TextBox x:Name="_downloadDirectoryTextBox"/>
                     </StackPanel>
@@ -72,13 +73,13 @@
             <TabItem Header="System settings" Margin="-2,-2,0,2">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
-                        <Button x:Name="_setScreenLockTimerButton" Content="_setScreenLockTimer" Click="_setScreenLockTimerButton_Click" Height="50" Width="150"/>
+                        <Button x:Name="_setScreenLockTimerButton" Content="_setScreenLockTimer" Click="_setScreenLockTimerButton_Click" />
                         <Label Content="Введи время в минутах"/>
                         <TextBox x:Name="_timeToScreenLockTimerTextBox"/>
                     </StackPanel>
                     <StackPanel HorizontalAlignment="Right">
                         <Label Content="Только для ноутбуков"/>
-                        <Button x:Name="_setMonitorBrightnessButton" Content="Установить яркость монитора (ноутубуки)" Click="_setMonitorBrightnessButton_Click" Height="50" Width="150"/>
+                        <Button x:Name="_setMonitorBrightnessButton" Content="Установить яркость монитора (ноутубуки)" Click="_setMonitorBrightnessButton_Click" />
                         <Label Content="Введи значение яркости"/>
                         <TextBox x:Name="_setMonitorBrightnessTextBox" Text="100"/>
                     </StackPanel>
@@ -92,7 +93,7 @@
                                 <Button x:Name="_setPageFileAutoButton" Content="По выбору системы" Width="150" Height="50" Click="_setPageFileAutoButton_Click"/>
                             </StackPanel>
                         </StackPanel>
-                        <Button x:Name="_setVirtualRamButton" Content="setVram" Height="50" Width="150" HorizontalAlignment="Right" VerticalAlignment="Top" Click="_setVirtualRamButton_Click"/>
+                        <Button x:Name="_setVirtualRamButton" Content="setVram" HorizontalAlignment="Right" VerticalAlignment="Top" Click="_setVirtualRamButton_Click"/>
                         <Label x:Name="_setVirtualRamLabel" Content="Выбери диск и укажы желаемый размер" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                         <Grid>
                             <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
@@ -104,7 +105,7 @@
                                 <TextBox x:Name="_maximumVirtualRamTextBox" Width="100" HorizontalAlignment="Right"/>
                             </StackPanel>
                         </Grid>
-                        <Button x:Name="_setVirtualRamFindDisks" Content="Find disks" Height="50" Width="150" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="_setVirtualRamFindDisks_Click"/>
+                        <Button x:Name="_setVirtualRamFindDisks" Content="Find disks" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="_setVirtualRamFindDisks_Click"/>
                         <ListBox x:Name="_setVirualRamSelectedDiskListBox" Width="200" Height="50" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                     </Grid>
                 </Grid>
