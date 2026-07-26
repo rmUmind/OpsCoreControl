@@ -12,7 +12,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TabControl Grid.Row="0" TabStripPlacement="Left">
-            <TabItem Header="Sevices">
+            <TabItem Header="Services">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
                         <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
@@ -32,7 +32,7 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Profile's">
+            <TabItem Header="Profiles">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -58,11 +58,27 @@
                         <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click"/>
                         <Button x:Name="_cleadTempFolderButton" Content="Clean Temp" Click="_cleadTempFolderButton_Click"/>
                     </StackPanel>
-                    <StackPanel HorizontalAlignment="Right">
-                        <Button x:Name="_openNetworkPathButton" Content="_cleanDownloadFolder" Click="_openNetworkPathButton_Click"/>
+                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button x:Name="_openNetworkPathButton" Content="Open and create folder newtork" Click="_openNetworkPathButton_Click"/>
                         <Label Content="Введите адрес папки"/>
-                        <TextBox x:Name="_openNetworkPathTextBox"/>
+                        <TextBox x:Name="_setNetworkPathTextBox"/>
+                        <Label Content="name of disk (optional)"/>
+                        <TextBox x:Name="_setNameForNewLogicalDiskTextBox"/>
                     </StackPanel>
+                    <Grid VerticalAlignment="Bottom" HorizontalAlignment="Right" Height="300" Width="400">
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                            <Button x:Name="_mapLogicalDiskButton" Content="Подключить диск" Click="_mapLogicalDiskButton_Click"/>
+                            <Button x:Name="_deleteCurrentLogicaldiskButton" Content="delete disk" Click="_deleteCurrentLogicaldiskButton_Click"/>
+                            <Button x:Name="_setNewNameLogicalDiskButton" Content="set new name for cuurent" Click="_setNewNameLogicalDiskButton_Click"/>
+                            <Label Content="Name new logical disk"/>
+                            <TextBox x:Name="_nameForOldLogicalDiskTextBox" Width="150"/>
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <Button x:Name="_findCurrentLogicalDiskButton" Content="find logical disks" Click="_findCurrentLogicalDiskButton_Click"/>
+                            <Label Content="Current disks"/>
+                            <ListBox x:Name="_currentLogicalDiskListBox" Height="150" Width="200"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </TabItem>
             <TabItem Header="Network">
@@ -74,14 +90,14 @@
                         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
                             <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click"/>
                             <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click"/>
-                            <Button x:Name="_stopOutputButton" Content="stop uotput" Click="_stopOutputButton_Click"/>
+                            <Button x:Name="_stopOutputButton" Content="stop output" Click="_stopOutputButton_Click"/>
                             <Label Content="ip adress"/>
                             <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8"/>
-                            <Button x:Name ="_clearipAdressTextBoxButton" Content="отчистить поле" Click="_clearipAdressTextBoxButton_Click"/>
+                            <Button x:Name ="_clearipAdressTextBoxButton" Content="очистить поле" Click="_clearipAdressTextBoxButton_Click"/>
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
                             <Button x:Name="_showIpconfigButton" Content="ipconfig /all"  Click="_showIpconfigButton_Click"/>
-                            <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="отчистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
+                            <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="очистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
                         </StackPanel>
                         <TextBox x:Name="_outputNetworkConsoleTextBox"
                          IsReadOnly="True"
@@ -168,7 +184,7 @@
                     <Label x:Name="_virtualRamLoadLabel" Content="Getting ram data"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="CP usege:"/>
+                    <Label Content="CPU:"/>
                     <Label  x:Name="_cpLoadLabel" Content="Getting CP data"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">

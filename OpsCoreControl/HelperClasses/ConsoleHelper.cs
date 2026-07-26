@@ -147,28 +147,40 @@ namespace OpsCoreControl.HelperClasses
             return psi;
         }
 
-        public static async Task<bool> LookForProcessEnd(ProcessStartInfo psi, string goodOutcome, string badOutcome, string exceptionOutcome = "Исключение работы процесса.")
+        public static async Task<bool> LookForProcessEnd(
+        ProcessStartInfo psi, string goodOutcome, string badOutcome,
+        string exceptionOutcome = "Исключение работы процесса.",
+        int timeoutMs = -1)                                   // ← новый параметр, -1 = ждать вечно
         {
             try
             {
                 using (var process = Process.Start(psi))
                 {
-                    await Task.Run(() => process.WaitForExit());
-                    if (process.ExitCode == 0)
+                    bool exited = timeoutMs > 0
+                        ? await Task.Run(() => process.WaitForExit(timeoutMs))
+                        : await Task.Run(() => { process.WaitForExit(); return true; });
+
+                    if (!exited)                                  // сработал таймаут
                     {
-                        Log.Add(goodOutcome, LogEntryType.Success);
-                        return true;
-                    }
-                    else
-                    {
-                        Log.Add(badOutcome + $" (код {process.ExitCode} | {process.StandardError.ReadToEnd()})", LogEntryType.Error);
+                        try { process.Kill(); } catch { }
+                        Log.Add($"Таймаут ({timeoutMs} мс): {badOutcome}", LogType.Error);
                         return false;
                     }
+
+                    if (process.ExitCode == 0)
+                    {
+                        Log.Add(goodOutcome, LogType.Success);
+                        return true;
+                    }
+
+                    string error = process.StandardError.ReadToEnd();
+                    Log.Add($"{badOutcome}. {error}", LogType.Error);
+                    return false;
                 }
             }
             catch (Exception ex)
             {
-                Log.Add(exceptionOutcome + " " + ex.Message, LogType.Error);
+                Log.Add($"{exceptionOutcome} {ex.Message}", LogType.Error);
                 return false;
             }
         }

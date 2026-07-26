@@ -16,7 +16,7 @@ namespace OpsCoreControl
 
         private async void _openNetworkPathButton_Click(object sender, RoutedEventArgs e)
         {
-            string path = _openNetworkPathTextBox.Text;
+            string path = _setNetworkPathTextBox.Text;
             await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _fileSystemManager.OpenNetworkPath(path));
         }
         private async void _cleadTempFolderButton_Click(object sender, RoutedEventArgs e)

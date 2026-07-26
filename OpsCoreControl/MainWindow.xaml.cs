@@ -13,35 +13,31 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
-        private void _showIpconfigButton_Click(object sender, RoutedEventArgs e)
+        
+        private void _setNewNameLogicalDiskButton_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleHelper.RunStreaming("ipconfig", "/all");
+
         }
 
-        private void _stopOutputButton_Click(object sender, RoutedEventArgs e)
+        private void _findCurrentLogicalDiskButton_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleHelper.StopStreaming();
+            _currentLogicalDiskListBox.Items.Clear();
+            var disks = _networkManager.GetLogicalDrives();
+            foreach (var disk in disks) { 
+                _currentLogicalDiskListBox.Items.Add(disk);
+            }
         }
 
-        private void _startPingButton_Click(object sender, RoutedEventArgs e)
+        private void _deleteCurrentLogicaldiskButton_Click(object sender, RoutedEventArgs e)
         {
 
-            ConsoleHelper.RunStreaming("ping", $"{_ipAdressTextBox.Text} -t");   // не "cmd /c ping", а сразу ping
         }
 
-        private void _startTrecertButton_Click(object sender, RoutedEventArgs e)
+        private async void _mapLogicalDiskButton_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleHelper.RunStreaming("tracert", _ipAdressTextBox.Text);
-        }
-
-        private void _clearOutputNetworkConsoleTextBox_Click(object sender, RoutedEventArgs e)
-        {
-            _outputNetworkConsoleTextBox.Clear();
-        }
-
-        private void _clearipAdressTextBoxButton_Click(object sender, RoutedEventArgs e)
-        {
-            _ipAdressTextBox.Clear();
+            string path = _setNetworkPathTextBox.Text;
+            string latter = _setNameForNewLogicalDiskTextBox.Text;
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _networkManager.MapNetworkDrive(path, latter));
         }
     }
 }
