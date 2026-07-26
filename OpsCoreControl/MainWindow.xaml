@@ -25,6 +25,10 @@
                             <Label Content="введите имя процесса" Height="30" Width="200"/>
                             <TextBox x:Name="_startCustomProcessTextBox" Height="20" Width="200"/>
                         </StackPanel>
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                            <Button x:Name="_startCustomProcessSelectItemButton" Content="Выбрать из списка" Click="_startCustomProcessSelectItemButton_Click"/>
+                            <ListBox x:Name="_startCustomProcessSelectItemListBox" Width="150" Height="100"/>
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </TabItem>

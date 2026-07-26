@@ -49,6 +49,12 @@ namespace OpsCoreControl
             _systemSettingsManager = new SystemSettingsManager();
             _monitorController = new PhysicalMonitorBrightnessController();
 
+            List<string> proceses = new List<string>() { "services.msc", "regedit", "eventvwr.msc", "appwiz.cpl" };
+            foreach (string procese in proceses)
+            {
+                _startCustomProcessSelectItemListBox.Items.Add(procese);
+            }
+
             // Chat
             Log.LogMessage += message =>
             {
