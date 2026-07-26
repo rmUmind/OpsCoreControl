@@ -66,9 +66,34 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Network">
-                <StackPanel HorizontalAlignment="Left">
-                    <Button x:Name="_clearNonRedeemablePoolButton" Content="Clean non redemable pool" Click="_clearNonRedeemablePool_Click" />
-                </StackPanel>
+                <Grid>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Button x:Name="_clearNonRedeemablePoolButton" Content="Сброс сети" Click="_clearNonRedeemablePool_Click"/>
+                    </StackPanel>
+                    <Grid Width="600" Height="400" VerticalAlignment="Bottom" HorizontalAlignment="Right">
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click"/>
+                            <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click"/>
+                            <Button x:Name="_stopOutputButton" Content="stop uotput" Click="_stopOutputButton_Click"/>
+                            <Label Content="ip adress"/>
+                            <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8"/>
+                            <Button x:Name ="_clearipAdressTextBoxButton" Content="отчистить поле" Click="_clearipAdressTextBoxButton_Click"/>
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <Button x:Name="_showIpconfigButton" Content="ipconfig /all"  Click="_showIpconfigButton_Click"/>
+                            <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="отчистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
+                        </StackPanel>
+                        <TextBox x:Name="_outputNetworkConsoleTextBox"
+                         IsReadOnly="True"
+                         FontFamily="Consolas"
+                         TextWrapping="NoWrap"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         Width="400" Height="250"
+                         HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                         local:AutoScrollBehavior.AutoScroll="True"/>
+                    </Grid>
+                </Grid>
             </TabItem>
             <TabItem Header="Software">
                 <Grid>

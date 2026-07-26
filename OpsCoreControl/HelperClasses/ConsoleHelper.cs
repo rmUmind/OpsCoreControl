@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,115 @@ namespace OpsCoreControl.HelperClasses
                 Verb = "runas"
             };
             return psi;
+        }
+
+        public static event Action<string> OnOutputConsoleLine;    // пришла строка
+        public static event Action OnOutputConsoleComplete;        // команда завершилась
+
+        private static Process _currentProcess;
+        private static volatile bool _stopRequested;
+
+        public static void RunStreaming(string fileName, string arguments)
+        {
+            KillCurrentProcess();          // ← ОБЯЗАТЕЛЬНО первым: убиваем прошлый процесс
+            _stopRequested = false;
+
+            Log.Add($"Запуск команды: {fileName} {arguments}", LogEntryType.Info);
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage)
+            };
+
+            _currentProcess = new Process { StartInfo = psi };
+            _currentProcess.EnableRaisingEvents = true;
+            _currentProcess.Exited += (s, e) =>
+            {
+                int exitCode = -1;
+                try { exitCode = ((Process)s).ExitCode; } catch { }
+                Log.Add($"Команда завершена: {fileName} (код выхода: {exitCode})", LogEntryType.Info);
+                OnOutputConsoleComplete?.Invoke();
+            };
+            _currentProcess.OutputDataReceived += (s, e) =>
+            {
+                if (_stopRequested) return;
+                if (e.Data != null) OnOutputConsoleLine?.Invoke(e.Data);
+            };
+
+            try
+            {
+                _currentProcess.Start();
+                _currentProcess.BeginOutputReadLine();
+                Log.Add($"Процесс запущен, PID: {_currentProcess.Id}", LogEntryType.Debug);
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось запустить команду {fileName}: {ex.Message}", LogEntryType.Error);
+            }
+        }
+
+        public static void StopStreaming()
+        {
+            if (_currentProcess == null)
+            {
+                Log.Add("Остановка: активный процесс отсутствует.", LogEntryType.Debug);
+                return;
+            }
+
+            _stopRequested = true;
+            Log.Add($"Остановка процесса PID: {_currentProcess.Id}...", LogEntryType.Info);
+
+            try
+            {
+                if (!_currentProcess.HasExited)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "taskkill",
+                        Arguments = $"/F /T /PID {_currentProcess.Id}",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    })?.WaitForExit();
+
+                    Log.Add($"Процесс PID {_currentProcess.Id} остановлен.", LogEntryType.Success);
+                }
+                else
+                {
+                    Log.Add("Процесс уже завершён.", LogEntryType.Debug);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Ошибка остановки процесса: {ex.Message}", LogEntryType.Error);
+            }
+        }
+        private static void KillCurrentProcess()
+        {
+            if (_currentProcess == null) return;
+
+            _stopRequested = true;
+            try
+            {
+                if (!_currentProcess.HasExited)
+                {
+                    _currentProcess.Kill();              // убиваем сам процесс, без внешнего taskkill
+                    _currentProcess.WaitForExit(2000);   // ждём реального выхода → async-чтение завершится
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Ошибка при остановке процесса: {ex.Message}", LogEntryType.Error);
+            }
+            finally
+            {
+                _currentProcess.Dispose();               // освобождаем дескрипторы
+                _currentProcess = null;
+            }
         }
 
         public static ProcessStartInfo StartProcess(string processName)
