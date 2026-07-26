@@ -13,11 +13,20 @@
         </Grid.RowDefinitions>
         <TabControl Grid.Row="0" TabStripPlacement="Left">
             <TabItem Header="Sevices">
-                <StackPanel HorizontalAlignment="Left">
-                    <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
-                    <Button x:Name="_rebootPC" Content="Reboot" Click="_rebootPC_Click" Width="150" Height="50"/>
-                    <Button x:Name="_shutdownPC" Content="Shutdown" Click="_shutdownPC_Click"  Width="150" Height="50"/>
-                </StackPanel>
+                <Grid>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50" />
+                        <Button x:Name="_rebootPC" Content="Reboot" Click="_rebootPC_Click" Width="150" Height="50"/>
+                        <Button x:Name="_shutdownPC" Content="Shutdown" Click="_shutdownPC_Click"  Width="150" Height="50"/>
+                    </StackPanel>
+                    <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="300" Width="400">
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Top" x:Name="_startCustomProcessButton" Content="Start process" Click="_startCustomProcessButton_Click"/>
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <Label Content="введите имя процесса" Height="30" Width="200"/>
+                            <TextBox x:Name="_startCustomProcessTextBox" Height="20" Width="200"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
             </TabItem>
             <TabItem Header="Profile's">
                 <Grid>
@@ -113,7 +122,13 @@
         </TabControl>
         
         <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
-            <ListBox x:Name="_mainChatListBox" Width="400" Height="100" HorizontalAlignment="Right" ScrollViewer.CanContentScroll="True"/>
+            <ListBox x:Name="_mainChatListBox" Width="400" Height="100" HorizontalAlignment="Right" ScrollViewer.CanContentScroll="True">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+            </ListBox>
             <StackPanel Orientation="Vertical" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Loaded Ram:"/>

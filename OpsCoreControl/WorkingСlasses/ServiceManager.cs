@@ -16,14 +16,40 @@ namespace OpsCoreControl
     {
         public async Task<bool> rebootPC()
         {
-            var psi = ConsoleHelper.cmdConsoleCommand("$\"/c shutdown /r /t 0 /f\"");
+            var psi = ConsoleHelper.CmdConsoleCommand("$\"/c shutdown /r /t 0 /f\"");
             return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет перезагружен.", "Не удалось перезагрузить компьютер");
         }
 
         public async Task<bool> shutdownPC()
         {
-            var psi = ConsoleHelper.cmdConsoleCommand("$\"/c shutdown /s /t 0 /f\"");
+            var psi = ConsoleHelper.CmdConsoleCommand("$\"/c shutdown /s /t 0 /f\"");
             return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет выключен.", "Не удалось перезагрузить компьютер");
+        }
+
+        public Task<bool> startCustomProcess(string processName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(processName))
+                {
+                    Log.Add("Не указано имя процесса.", LogType.Error);
+                    return Task.FromResult(false);
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = processName.Trim(),
+                    UseShellExecute = true
+                });
+
+                Log.Add($"Процесс запущен: {processName}", LogType.Success);
+                return Task.FromResult(true);
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось запустить процесс: {ex.Message}", LogType.Error);
+                return Task.FromResult(false);
+            }
         }
 
         public async Task<bool> RebootPrintSpooler(string serviceName)

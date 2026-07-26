@@ -10,7 +10,7 @@ namespace OpsCoreControl.HelperClasses
 {
     internal static class ConsoleHelper
     {
-        public static ProcessStartInfo cmdConsoleCommand(string command)
+        public static ProcessStartInfo CmdConsoleCommand(string command)
         {
             var psi = new ProcessStartInfo
             {
@@ -21,6 +21,18 @@ namespace OpsCoreControl.HelperClasses
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
                 Verb = "runas"
+            };
+            return psi;
+        }
+
+        public static ProcessStartInfo StartProcess(string processName)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = processName,
+                UseShellExecute = false,      // нужно для RedirectStandardError
+                RedirectStandardError = true, // нужно для UseShellExecute = false
+                Verb = "runas"                // нужно для UseShellExecute = true  ← конфликт
             };
             return psi;
         }

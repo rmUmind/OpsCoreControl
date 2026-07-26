@@ -16,7 +16,7 @@ namespace OpsCoreControl.WorkingСlasses
 
         public async Task<bool> DeleteProfileFolderAsync(string profilePath)
         {
-            var psi = ConsoleHelper.cmdConsoleCommand("/c rmdir /s /q \"{profilePath}\"");
+            var psi = ConsoleHelper.CmdConsoleCommand("/c rmdir /s /q \"{profilePath}\"");
             return await ConsoleHelper.LookForProcessEnd(psi, "Папка профиля удалена.", "Ошибка удаления папки профиля.", "Исключение при удалении папки профиля.");
         }
         public async Task<bool> LoadUserProfiles()
