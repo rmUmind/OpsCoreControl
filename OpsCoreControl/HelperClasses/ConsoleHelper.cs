@@ -19,9 +19,9 @@ namespace OpsCoreControl.HelperClasses
                 Arguments = command,
                 UseShellExecute = false,
                 RedirectStandardError = true,
+                StandardErrorEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage), // ← фикс кракозябр
                 CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                Verb = "runas"
+                WindowStyle = ProcessWindowStyle.Hidden
             };
             return psi;
         }

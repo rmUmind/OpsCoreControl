@@ -108,18 +108,8 @@ namespace OpsCoreControl.WorkingСlasses
                 }
 
                 Log.Add($"Открываем сетевую папку: {uncPath}", LogType.Info);
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "explorer.exe",
-                    Arguments = uncPath,
-                    UseShellExecute = false,
-                    RedirectStandardError = true,
-                    CreateNoWindow = false
-                };
-
-                if (!await ConsoleHelper.LookForProcessEnd(psi, $"Проводник успешно открыт по адресу: {uncPath}", "Ошибка процесса при открытие проводника."))
-                    return false;
+                await Task.Run(() => Process.Start("explorer.exe", $"\"{uncPath}\""));
+                Log.Add($"Проводник открыт по адресу: {uncPath}", LogType.Success);
                 return true;
             }
             catch (Exception ex)

@@ -1,10 +1,10 @@
-﻿using OpsCoreControl.HelperClasses;
+﻿using Microsoft.Win32;
+using OpsCoreControl.HelperClasses;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management;
-using System.Text;
 using System.Threading.Tasks;
 using static OpsCoreControl.Log;
 
@@ -12,22 +12,43 @@ namespace OpsCoreControl.WorkingСlasses
 {
     internal class NetworkManager
     {
-        public async Task<bool> ClearNonPagedPool ()
-        {
-            var psi = ConsoleHelper.CmdConsoleCommand("\"/c netsh winsock reset & netsh int ip reset & ipconfig /release & ipconfig /renew & ipconfig /flushdns\"");
-            return await ConsoleHelper.LookForProcessEnd(psi, "Невыгружаемый пул успешно удален", "Ошибка при удаление папки профился", "Исключение при удаление невыгружаемого пула: ");
-        }
-
         // Подключить сетевой диск
         public async Task<bool> MapNetworkDrive(string letter, string uncPath, bool persistent = true)
         {
+            if (string.IsNullOrWhiteSpace(uncPath))
+            {
+                Log.Add("Не указан сетевой путь.", LogType.Error);
+                return false;
+            }
+            if (!uncPath.StartsWith(@"\\"))
+            {
+                uncPath = @"\\" + uncPath.TrimStart('\\');
+            }
+
+            string withoutPrefix = uncPath.Substring(2);
+            if (!withoutPrefix.Contains('\\'))
+            {
+                Log.Add($"Нужно имя шары: {uncPath}\\имя_шары. Сервер без шары подключить как диск нельзя.", LogType.Error);
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(letter))
+            {
+                letter = GetFreeDriveLetter();
+                if (letter == null)
+                {
+                    Log.Add("Нет свободных букв для дисков.", LogType.Error);
+                    return false;
+                }
+            }
             string key = letter.EndsWith(":") ? letter : letter + ":";
-            string command = $"/c net use {key} {uncPath} /persistent:{(persistent ? "yes" : "no")}";
+
+            string command = $"/c net use {key} \"{uncPath}\" /persistent:{(persistent ? "yes" : "no")}";
             var psi = ConsoleHelper.CmdConsoleCommand(command);
             return await ConsoleHelper.LookForProcessEnd(psi,
-                $"Диск {key} подключён к {uncPath}",
-                $"Не удалось подключить {key}"
-                ,timeoutMs: 5000);
+                $"Шара {uncPath} подключена как диск {key}",
+                $"Не удалось подключить {uncPath} как диск {key}",
+                timeoutMs: 5000);
         }
 
         // Отключить сетевой диск
@@ -38,10 +59,23 @@ namespace OpsCoreControl.WorkingСlasses
             var psi = ConsoleHelper.CmdConsoleCommand(command);
             return await ConsoleHelper.LookForProcessEnd(psi,
                 $"Диск {key} отключён",
-                $"Не удалось отключить {key}");
+                $"Не удалось отключить {key}",
+                timeoutMs: 5000);
         }
 
-        // Список подключённых сетевых дисков (буква + UNC)
+        // Переименовать метку диска
+        public async Task<bool> RenameLogicalDisk(string letter, string newName)
+        {
+            string key = letter.EndsWith(":") ? letter : letter + ":";
+            string command = $"/c label {key} \"{newName}\"";
+            var psi = ConsoleHelper.CmdConsoleCommand(command);
+            return await ConsoleHelper.LookForProcessEnd(psi,
+                $"Метка диска {key} изменена на \"{newName}\"",
+                $"Не удалось изменить метку {key}",
+                timeoutMs: 5000);
+        }
+
+        // Список всех логических дисков
         public List<string> GetLogicalDrives()
         {
             var result = new List<string>();
@@ -57,12 +91,50 @@ namespace OpsCoreControl.WorkingСlasses
 
                     string line = $"{name} [{type}]";
                     if (!string.IsNullOrEmpty(label)) line += $" \"{label}\"";
-                    if (!string.IsNullOrEmpty(provider)) line += $" → {provider}";   // UNC для сетевых
+                    if (!string.IsNullOrEmpty(provider)) line += $" → {provider}";
 
                     result.Add(line);
                 }
             }
             return result;
+        }
+
+        // Один раз включает видимость дисков между сессиями (идемпотентно)
+        public void EnsureLinkedConnectionsEnabled()
+        {
+            const string regPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System";
+            try
+            {
+                using (var key = Registry.LocalMachine.OpenSubKey(regPath, writable: true))
+                {
+                    if (key.GetValue("EnableLinkedConnections") is int value && value == 1)
+                    {
+                        return;   // уже включено
+                    }
+                    key.SetValue("EnableLinkedConnections", 1, RegistryValueKind.DWord);
+                    Log.Add("Включена видимость сетевых дисков между сессиями. Нужна однократная перезагрузка.", LogType.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось включить EnableLinkedConnections: {ex.Message}", LogType.Error);
+            }
+        }
+
+        // Подбор свободной буквы (с Z вниз)
+        private string GetFreeDriveLetter()
+        {
+            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var drive in DriveInfo.GetDrives())
+            {
+                used.Add(drive.Name.TrimEnd('\\'));
+            }
+            for (char c = 'Z'; c >= 'D'; c--)
+            {
+                string letter = c + ":";
+                if (!used.Contains(letter)) return letter;
+            }
+            return null;
         }
 
         private string GetDriveTypeName(object driveType)
@@ -76,6 +148,35 @@ namespace OpsCoreControl.WorkingСlasses
                 case "6": return "RAM";
                 default: return "Другой";
             }
+        }
+        public async Task<bool> ClearNonPagedPool()
+        {
+            var commands = new List<string>
+    {
+        "/c netsh winsock reset",
+        "/c netsh int ip reset",
+        "/c ipconfig /flushdns"
+    };
+
+            bool allOk = true;
+            foreach (string command in commands)
+            {
+                var psi = ConsoleHelper.CmdConsoleCommand(command);
+                bool ok = await ConsoleHelper.LookForProcessEnd(psi,
+                    $"Выполнено: {command}",
+                    $"Не удалось выполнить: {command}",
+                    timeoutMs: 10000);
+                if (!ok)
+                {
+                    allOk = false;
+                }
+            }
+
+            if (allOk)
+            {
+                Log.Add("Сброс сети выполнен. Для полного применения рекомендуется перезагрузка.", LogType.Success);
+            }
+            return allOk;
         }
     }
 }

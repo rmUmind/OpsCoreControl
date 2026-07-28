@@ -73,6 +73,7 @@
     <Compile Include="WorkingСlasses\SoftwareUpdateManager.cs" />
     <Compile Include="WorkingСlasses\SystemSettingsManager.cs" />
     <Compile Include="WorkingСlasses\UserProfileManager.cs" />
+    <Compile Include="Xaml\AutoScrollBehavior.cs" />
     <Compile Include="Xaml\MainWindow.Folder.cs" />
     <Compile Include="Xaml\MainWindow.Init.cs" />
     <Compile Include="Xaml\MainWindow.Network.cs" />
