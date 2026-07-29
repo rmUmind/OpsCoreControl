@@ -15,6 +15,46 @@ namespace OpsCoreControl.WorkingСlasses
 {
     internal class FileSystemManager
     {
+        public class DiskHealthInfo
+        {
+            public string Model { get; set; }
+            public string InterfaceType { get; set; }
+            public string SizeGb { get; set; }
+            public string Status { get; set; }
+            public string SerialNumber { get; set; }
+            public override string ToString() => $"{Model}  [{InterfaceType}]  {SizeGb} ГБ  —  SMART: {Status}";
+        }
+        public List<DiskHealthInfo> GetDiskHealth()
+        {
+            var result = new List<DiskHealthInfo>();
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher(
+                    "SELECT Model, InterfaceType, Size, Status, SerialNumber FROM Win32_DiskDrive"))
+                {
+                    foreach (ManagementObject disk in searcher.Get())
+                    {
+                        string sizeGb = "0";
+                        if (ulong.TryParse(disk["Size"]?.ToString(), out ulong bytes))
+                            sizeGb = (bytes / (1024.0 * 1024.0 * 1024.0)).ToString("F0");
+
+                        result.Add(new DiskHealthInfo
+                        {
+                            Model = disk["Model"]?.ToString() ?? "—",
+                            InterfaceType = disk["InterfaceType"]?.ToString() ?? "—",
+                            SizeGb = sizeGb,
+                            Status = disk["Status"]?.ToString() ?? "—",
+                            SerialNumber = disk["SerialNumber"]?.ToString()?.Trim() ?? "—"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Ошибка получения SMART-статуса: {ex.Message}", LogType.Error);
+            }
+            return result;
+        }
         public async Task<bool> CleanDownloadFolder()
         {
             string path = "";

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using static OpsCoreControl.Log;
@@ -12,6 +13,9 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
+        private ProcessManager _processManager;
+        private StartupManager _startupManager;
+        private HostsManager _hostsManager;
         private DashBoard _dashBoard;
         private FileSystemManager _fileSystemManager;
         private NetworkManager _networkManager;
@@ -25,6 +29,8 @@ namespace OpsCoreControl
         private List<string> _lastDisks = new List<string>();
         private List<string> _lastAdapters = new List<string>();
         private List<string> _lastUsb = new List<string>();
+
+        
 
         public MainWindow()
         {
@@ -52,11 +58,28 @@ namespace OpsCoreControl
             _userProfileManager = new UserProfileManager();
             _systemSettingsManager = new SystemSettingsManager();
             _monitorController = new PhysicalMonitorBrightnessController();
+            _processManager = new ProcessManager();
+            _startupManager = new StartupManager();
+            _hostsManager = new HostsManager();
 
-            List<string> proceses = new List<string>() { "services.msc", "regedit", "eventvwr.msc", "appwiz.cpl" };
-            foreach (string procese in proceses)
+            var tools = new List<SystemTool>
             {
-                _startCustomProcessSelectItemListBox.Items.Add(procese);
+            new SystemTool { Name = "services.msc",  Description = "Службы" },
+            new SystemTool { Name = "regedit",       Description = "Редактор реестра" },
+            new SystemTool { Name = "eventvwr.msc",  Description = "Просмотр событий" },
+            new SystemTool { Name = "appwiz.cpl",    Description = "Программы и компоненты" },
+            new SystemTool { Name = "devmgmt.msc",   Description = "Диспетчер устройств" },
+            new SystemTool { Name = "diskmgmt.msc",  Description = "Управление дисками" },
+            new SystemTool { Name = "compmgmt.msc",  Description = "Управление компьютером" },
+            new SystemTool { Name = "msconfig",      Description = "Конфигурация системы" },
+            new SystemTool { Name = "taskmgr",       Description = "Диспетчер задач" },
+            new SystemTool { Name = "lusrmgr.msc",   Description = "Локальные пользователи и группы" },
+            new SystemTool { Name = "wf.msc",        Description = "Брандмауэр (расширенный)" },
+            new SystemTool { Name = "resmon",        Description = "Монитор ресурсов" }
+            };
+            foreach (var tool in tools)
+            {
+                _startCustomProcessSelectItemListBox.Items.Add(tool);
             }
 
             // Chat
@@ -142,6 +165,21 @@ namespace OpsCoreControl
                 FileName = GitHubNewIssueUrl,
                 UseShellExecute = true
             });
+        }
+        private void _copyAllLogsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var sb = new StringBuilder();
+            foreach (var item in _mainChatListBox.Items)
+            {
+                sb.AppendLine(item.ToString());
+            }
+            if (sb.Length == 0)
+            {
+                Log.Add("Лог пуст.", LogType.Info);
+                return;
+            }
+            Clipboard.SetText(sb.ToString());
+            Log.Add("Все логи скопированы в буфер обмена.", LogType.Success);
         }
     }
 }

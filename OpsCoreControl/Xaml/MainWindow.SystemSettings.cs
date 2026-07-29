@@ -1,4 +1,5 @@
-﻿using OpsCoreControl.WorkingСlasses;
+﻿using OpsCoreControl.HelperClasses;
+using OpsCoreControl.WorkingСlasses;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,6 +11,22 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
+        private void _sfcScannowButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConsoleHelper.RunStreaming("sfc", "/scannow");
+        }
+        private void _dismCheckHealthButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConsoleHelper.RunStreaming("DISM", "/Online /Cleanup-Image /CheckHealth");
+        }
+        private void _dismScanHealthButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConsoleHelper.RunStreaming("DISM", "/Online /Cleanup-Image /ScanHealth");
+        }
+        private void _dismRestoreHealthButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConsoleHelper.RunStreaming("DISM", "/Online /Cleanup-Image /RestoreHealth");
+        }
         private async void _setScreenLockTimerButton_Click(object sender, RoutedEventArgs e)
         {
             int mitutes;

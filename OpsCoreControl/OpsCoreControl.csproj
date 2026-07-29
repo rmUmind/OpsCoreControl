@@ -66,9 +66,14 @@
     <Compile Include="HelperClasses\ButtonHelper.cs" />
     <Compile Include="HelperClasses\ConsoleHelper.cs" />
     <Compile Include="HelperClasses\Log.cs" />
+    <Compile Include="WorkingСlasses\EventManager.cs" />
+    <Compile Include="WorkingСlasses\HostsManager.cs" />
+    <Compile Include="WorkingСlasses\ProcessManager.cs" />
+    <Compile Include="WorkingСlasses\StartupManager.cs" />
     <Compile Include="Xaml\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Xaml\App.xaml.cs" />
     <Compile Include="Xaml\DashboardModels.cs" />
     <Compile Include="WorkingСlasses\FileSystemManager.cs" />
     <Compile Include="WorkingСlasses\PhysicalMonitorBrightnessController.cs" />
@@ -78,12 +83,16 @@
     <Compile Include="WorkingСlasses\SystemSettingsManager.cs" />
     <Compile Include="WorkingСlasses\UserProfileManager.cs" />
     <Compile Include="Xaml\AutoScrollBehavior.cs" />
+    <Compile Include="Xaml\MainWindow.EventLog.cs" />
     <Compile Include="Xaml\MainWindow.Folder.cs" />
+    <Compile Include="Xaml\MainWindow.Hosts.cs" />
     <Compile Include="Xaml\MainWindow.Init.cs" />
     <Compile Include="Xaml\MainWindow.Network.cs" />
+    <Compile Include="Xaml\MainWindow.Processes.cs" />
     <Compile Include="Xaml\MainWindow.Profile.cs" />
     <Compile Include="Xaml\MainWindow.Services.cs" />
     <Compile Include="Xaml\MainWindow.Software.cs" />
+    <Compile Include="Xaml\MainWindow.Startup.cs" />
     <Compile Include="Xaml\MainWindow.SystemSettings.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

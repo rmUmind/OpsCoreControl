@@ -71,7 +71,15 @@ namespace OpsCoreControl
                 () => _networkManager.RenameLogicalDisk(letter, newName));
             RefreshLogicalDisks();
         }
-
+        private void _checkSmartButton_Click(object sender, RoutedEventArgs e)
+        {
+            _diskHealthListBox.Items.Clear();
+            foreach (var disk in _fileSystemManager.GetDiskHealth())
+            {
+                _diskHealthListBox.Items.Add(disk);
+            }
+            Log.Add("Проверка SMART выполнена.", LogType.Info);
+        }
         private void _findCurrentLogicalDiskButton_Click(object sender, RoutedEventArgs e)
         {
             RefreshLogicalDisks();

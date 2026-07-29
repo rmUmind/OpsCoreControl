@@ -26,5 +26,42 @@ namespace OpsCoreControl
         {
             _downloadDirectoryTextBox.Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
         }
+        private List<InstalledProgram> _allPrograms = new List<InstalledProgram>();
+
+        private void _refreshInstalledProgramsButton_Click(object sender, RoutedEventArgs e)
+        {
+            _allPrograms = _softwareManager.GetInstalledPrograms();
+            FilterPrograms();
+            Log.Add($"Найдено программ: {_allPrograms.Count}", LogType.Info);
+        }
+
+        private void _searchProgramTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            FilterPrograms();
+        }
+
+        private void FilterPrograms()
+        {
+            string filter = _searchProgramTextBox.Text.Trim();
+            _installedProgramsListBox.Items.Clear();
+            foreach (InstalledProgram p in _allPrograms)
+            {
+                if (string.IsNullOrEmpty(filter) || p.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    _installedProgramsListBox.Items.Add(p);
+            }
+        }
+
+        private void _uninstallProgramButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(_installedProgramsListBox.SelectedItem is InstalledProgram program))
+            {
+                Log.Add("Выберите программу для удаления.", LogType.Error);
+                return;
+            }
+            MessageBoxResult confirm = MessageBox.Show($"Удалить '{program.Name}'?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+            _softwareManager.UninstallProgram(program);
+        }
     }
+
 }

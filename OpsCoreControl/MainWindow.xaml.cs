@@ -14,8 +14,5 @@ namespace OpsCoreControl
     public partial class MainWindow : Window
     {
 
-
-
-
     }
 }
