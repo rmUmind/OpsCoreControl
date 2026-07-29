@@ -66,6 +66,9 @@
     <Compile Include="HelperClasses\ButtonHelper.cs" />
     <Compile Include="HelperClasses\ConsoleHelper.cs" />
     <Compile Include="HelperClasses\Log.cs" />
+    <Compile Include="Xaml\AboutWindow.xaml.cs">
+      <DependentUpon>AboutWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Xaml\DashboardModels.cs" />
     <Compile Include="WorkingСlasses\FileSystemManager.cs" />
     <Compile Include="WorkingСlasses\PhysicalMonitorBrightnessController.cs" />
@@ -95,6 +98,9 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Xaml\AboutWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

@@ -2,6 +2,7 @@
 using OpsCoreControl.WorkingСlasses;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -124,6 +125,23 @@ namespace OpsCoreControl
         {
             bool expand = _dashboardToggleButton.IsChecked == true;
             _extendedDashboardPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        }
+        // ВАЖНО: если репозиторий называется не OpsCoreControl — поправь имя в URL
+        private const string GitHubNewIssueUrl = "https://github.com/rmUmind/OpsCoreControl/issues/new";
+
+        private void _showAbout_Click(object sender, RoutedEventArgs e)
+        {
+            var about = new AboutWindow { Owner = this };
+            about.ShowDialog();
+        }
+
+        private void _showBugReport_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = GitHubNewIssueUrl,
+                UseShellExecute = true
+            });
         }
     }
 }

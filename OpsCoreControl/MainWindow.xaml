@@ -6,7 +6,12 @@
         xmlns:local="clr-namespace:OpsCoreControl"
         mc:Ignorable="d"
         Title="MainWindow" Height="720" Width="1100">
-    <Grid>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Инфо" Click="_showAbout_Click"/>
+            <MenuItem Header="Bug Report" Click="_showBugReport_Click"/>
+        </Menu>
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -81,25 +86,67 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Network">
-                <Grid>
-                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                        <Button x:Name="_clearNonRedeemablePoolButton" Content="Сброс сети" Click="_clearNonRedeemablePool_Click"/>
-                    </StackPanel>
-                    <Grid Width="600" Height="400" VerticalAlignment="Bottom" HorizontalAlignment="Right">
-                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click"/>
-                            <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click"/>
-                            <Button x:Name="_stopOutputButton" Content="stop output" Click="_stopOutputButton_Click"/>
-                            <Label Content="ip adress"/>
-                            <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8"/>
-                            <Button x:Name ="_clearipAdressTextBoxButton" Content="очистить поле" Click="_clearipAdressTextBoxButton_Click"/>
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                            <Button x:Name="_showIpconfigButton" Content="ipconfig /all"  Click="_showIpconfigButton_Click"/>
-                            <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="очистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
-                        </StackPanel>
-                        <TextBox x:Name="_outputNetworkConsoleTextBox"
+                <TabItem Header="Network">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Новые сетевые команды -->
+                        <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="4">
+                            <StackPanel Margin="6">
+                                <Label Content="Диагностика (адрес из поля)" FontWeight="Bold" Padding="0,2"/>
+                                <Button x:Name="_nslookupButton" Content="nslookup" Click="_nslookupButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_pingContinuousButton" Content="ping -t (непрерывный)" Click="_pingContinuousButton_Click" Margin="0,2" MinWidth="150"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="6">
+                                <Label Content="IP-конфигурация" FontWeight="Bold" Padding="0,2"/>
+                                <Button x:Name="_ipReleaseButton" Content="ipconfig /release" Click="_ipReleaseButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_ipRenewButton" Content="ipconfig /renew" Click="_ipRenewButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_ipFlushDnsButton" Content="ipconfig /flushdns" Click="_ipFlushDnsButton_Click" Margin="0,2" MinWidth="150"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="6">
+                                <Label Content="Состояние сети" FontWeight="Bold" Padding="0,2"/>
+                                <Button x:Name="_arpButton" Content="arp -a" Click="_arpButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_routePrintButton" Content="route print" Click="_routePrintButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_getmacButton" Content="getmac /v" Click="_getmacButton_Click" Margin="0,2" MinWidth="150"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="6">
+                                <Label Content="Wi-Fi" FontWeight="Bold" Padding="0,2"/>
+                                <Button x:Name="_wlanInterfacesButton" Content="wlan show interfaces" Click="_wlanInterfacesButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_wlanProfilesButton" Content="wlan show profiles" Click="_wlanProfilesButton_Click" Margin="0,2" MinWidth="150"/>
+                                <Button x:Name="_wlanDriversButton" Content="wlan show drivers" Click="_wlanDriversButton_Click" Margin="0,2" MinWidth="150"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="6">
+                                <Label Content="Адаптеры" FontWeight="Bold" Padding="0,2"/>
+                                <Button x:Name="_showNetInterfacesButton" Content="show interface" Click="_showNetInterfacesButton_Click" Margin="0,2" MinWidth="150"/>
+                            </StackPanel>
+                        </WrapPanel>
+
+                        <!-- Существующее содержимое (без изменений) -->
+                        <Grid Grid.Row="1">
+                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <Button x:Name="_clearNonRedeemablePoolButton" Content="Сброс сети" Click="_clearNonRedeemablePool_Click"/>
+                            </StackPanel>
+                            <Grid Width="600" Height="400" VerticalAlignment="Bottom" HorizontalAlignment="Right">
+                                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+                                    <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click"/>
+                                    <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click"/>
+                                    <Button x:Name="_stopOutputButton" Content="stop output" Click="_stopOutputButton_Click"/>
+                                    <Label Content="ip adress"/>
+                                    <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8"/>
+                                    <Button x:Name="_clearipAdressTextBoxButton" Content="очистить поле" Click="_clearipAdressTextBoxButton_Click"/>
+                                </StackPanel>
+                                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Button x:Name="_showIpconfigButton" Content="ipconfig /all" Click="_showIpconfigButton_Click"/>
+                                    <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="очистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
+                                </StackPanel>
+                                <TextBox x:Name="_outputNetworkConsoleTextBox"
                          IsReadOnly="True"
                          FontFamily="Consolas"
                          TextWrapping="NoWrap"
@@ -108,10 +155,11 @@
                          Width="400" Height="250"
                          HorizontalAlignment="Left" VerticalAlignment="Bottom"
                          local:AutoScrollBehavior.AutoScroll="True"/>
+                            </Grid>
+                        </Grid>
                     </Grid>
-                </Grid>
-            </TabItem>
-            <TabItem Header="Software">
+                </TabItem>
+                <TabItem Header="Software">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left">
                         <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click"/>
@@ -165,60 +213,61 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        
-        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
-            <Grid Grid.Row="1" Margin="4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
 
-                <!-- Чат -->
-                <ListBox Grid.Column="0" x:Name="_mainChatListBox" Width="400" Height="140"
+            <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
+                <Grid Grid.Row="1" Margin="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Чат -->
+                    <ListBox Grid.Column="0" x:Name="_mainChatListBox" Width="400" Height="140"
              HorizontalAlignment="Left" ScrollViewer.CanContentScroll="True">
-                    <ListBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
-                        </ContextMenu>
-                    </ListBox.ContextMenu>
-                </ListBox>
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                    </ListBox>
 
-                <!-- Дашборд -->
-                <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="4,0,0,0" Padding="6">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel>
-                            <!-- Краткая зона + кнопка-переключатель -->
-                            <DockPanel LastChildFill="True">
-                                <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
+                    <!-- Дашборд -->
+                    <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="4,0,0,0" Padding="6">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
+                                <!-- Краткая зона + кнопка-переключатель -->
+                                <DockPanel LastChildFill="True">
+                                    <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
                                   Content="ⓘ" Width="28" Height="28" VerticalAlignment="Top"
                                   Click="_dashboardToggleButton_Click"/>
-                                <StackPanel>
-                                    <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
-                                    <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
-                                    <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
+                                    <StackPanel>
+                                        <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
+                                        <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
+                                        <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <TextBlock Text="Диски:" FontWeight="Bold" Margin="0,4,0,0"/>
+                                <ListBox x:Name="_dashDisksListBox" Height="70" HorizontalAlignment="Stretch"/>
+
+                                <!-- Расширенная зона (скрыта по умолчанию) -->
+                                <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
+                                    <Separator Margin="0,6"/>
+                                    <TextBlock Text="Система" FontWeight="Bold"/>
+                                    <TextBlock x:Name="_extSystemText"/>
+                                    <TextBlock x:Name="_extDiskActivityText"/>
+
+                                    <TextBlock Text="Сетевые адаптеры" FontWeight="Bold" Margin="0,6,0,0"/>
+                                    <ListBox x:Name="_extAdaptersListBox" Height="90"/>
+
+                                    <TextBlock Text="USB-устройства" FontWeight="Bold" Margin="0,6,0,0"/>
+                                    <ListBox x:Name="_extUsbListBox" Height="110"/>
                                 </StackPanel>
-                            </DockPanel>
-
-                            <TextBlock Text="Диски:" FontWeight="Bold" Margin="0,4,0,0"/>
-                            <ListBox x:Name="_dashDisksListBox" Height="70" HorizontalAlignment="Stretch"/>
-
-                            <!-- Расширенная зона (скрыта по умолчанию) -->
-                            <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
-                                <Separator Margin="0,6"/>
-                                <TextBlock Text="Система" FontWeight="Bold"/>
-                                <TextBlock x:Name="_extSystemText"/>
-                                <TextBlock x:Name="_extDiskActivityText"/>
-
-                                <TextBlock Text="Сетевые адаптеры" FontWeight="Bold" Margin="0,6,0,0"/>
-                                <ListBox x:Name="_extAdaptersListBox" Height="90"/>
-
-                                <TextBlock Text="USB-устройства" FontWeight="Bold" Margin="0,6,0,0"/>
-                                <ListBox x:Name="_extUsbListBox" Height="110"/>
                             </StackPanel>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
-            </Grid>
-        </StackPanel>
-    </Grid>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
 </Window>
