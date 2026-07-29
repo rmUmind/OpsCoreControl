@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpsCoreControl"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="800">
+        Title="MainWindow" Height="720" Width="1100">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -167,31 +167,58 @@
         </TabControl>
         
         <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
-            <ListBox x:Name="_mainChatListBox" Width="400" Height="100" HorizontalAlignment="Right" ScrollViewer.CanContentScroll="True">
-                <ListBox.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
-                    </ContextMenu>
-                </ListBox.ContextMenu>
-            </ListBox>
-            <StackPanel Orientation="Vertical" HorizontalAlignment="Right">
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Loaded Ram:"/>
-                    <Label x:Name="_ramLoadLabel" Content="Getting ram data"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Loaded VRam:"/>
-                    <Label x:Name="_virtualRamLoadLabel" Content="Getting ram data"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="CPU:"/>
-                    <Label  x:Name="_cpLoadLabel" Content="Getting CP data"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Free space:"/>
-                    <Label x:Name="_freeSpaceLabel" Content="Getting free space data"/>
-                </StackPanel>
-            </StackPanel>
+            <Grid Grid.Row="1" Margin="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Чат -->
+                <ListBox Grid.Column="0" x:Name="_mainChatListBox" Width="400" Height="140"
+             HorizontalAlignment="Left" ScrollViewer.CanContentScroll="True">
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+
+                <!-- Дашборд -->
+                <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="4,0,0,0" Padding="6">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <!-- Краткая зона + кнопка-переключатель -->
+                            <DockPanel LastChildFill="True">
+                                <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
+                                  Content="ⓘ" Width="28" Height="28" VerticalAlignment="Top"
+                                  Click="_dashboardToggleButton_Click"/>
+                                <StackPanel>
+                                    <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
+                                    <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
+                                    <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
+                                </StackPanel>
+                            </DockPanel>
+
+                            <TextBlock Text="Диски:" FontWeight="Bold" Margin="0,4,0,0"/>
+                            <ListBox x:Name="_dashDisksListBox" Height="70" HorizontalAlignment="Stretch"/>
+
+                            <!-- Расширенная зона (скрыта по умолчанию) -->
+                            <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
+                                <Separator Margin="0,6"/>
+                                <TextBlock Text="Система" FontWeight="Bold"/>
+                                <TextBlock x:Name="_extSystemText"/>
+                                <TextBlock x:Name="_extDiskActivityText"/>
+
+                                <TextBlock Text="Сетевые адаптеры" FontWeight="Bold" Margin="0,6,0,0"/>
+                                <ListBox x:Name="_extAdaptersListBox" Height="90"/>
+
+                                <TextBlock Text="USB-устройства" FontWeight="Bold" Margin="0,6,0,0"/>
+                                <ListBox x:Name="_extUsbListBox" Height="110"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
         </StackPanel>
     </Grid>
 </Window>

@@ -66,6 +66,7 @@
     <Compile Include="HelperClasses\ButtonHelper.cs" />
     <Compile Include="HelperClasses\ConsoleHelper.cs" />
     <Compile Include="HelperClasses\Log.cs" />
+    <Compile Include="Xaml\DashboardModels.cs" />
     <Compile Include="WorkingСlasses\FileSystemManager.cs" />
     <Compile Include="WorkingСlasses\PhysicalMonitorBrightnessController.cs" />
     <Compile Include="WorkingСlasses\NetworkManager.cs" />

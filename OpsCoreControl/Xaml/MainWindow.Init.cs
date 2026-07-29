@@ -2,7 +2,7 @@
 using OpsCoreControl.WorkingСlasses;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using static OpsCoreControl.Log;
@@ -20,29 +20,19 @@ namespace OpsCoreControl
         private SystemSettingsManager _systemSettingsManager;
         private PhysicalMonitorBrightnessController _monitorController;
 
+        // анти-мерцание: перерисовываем списки только при изменении
+        private List<string> _lastDisks = new List<string>();
+        private List<string> _lastAdapters = new List<string>();
+        private List<string> _lastUsb = new List<string>();
+
         public MainWindow()
         {
             InitializeComponent();
 
-
             _dashBoard = new DashBoard();
+            _dashBoard.Updated += RenderDashboard;
 
-            // RAM
-            _dashBoard.totalRam += value => _ramLoadLabel.Content = (value / (1024 * 1024)).ToString() + " / ";
-            _dashBoard.ramUsageUpdated += value => _ramLoadLabel.Content += Math.Round((float)value).ToString() + " MB";
-
-            // VRAM
-            _dashBoard.virtualRamTotalUpdated += value => _virtualRamLoadLabel.Content = Math.Round((float)(value / (1024 * 1024))).ToString() + " / ";
-            _dashBoard.virtualRamUsageUpdated += value => _virtualRamLoadLabel.Content += Math.Round((float)value).ToString() + " MB";
-
-            // CPU
-            _dashBoard.cpUsageUpdated += value => _cpLoadLabel.Content = Math.Round((float)value).ToString() + "%";
-
-            // Free spacce
-            _dashBoard.freeSpaceUpdated += value => _freeSpaceLabel.Content = Math.Round((float)value).ToString() + "%";
-
-
-            // Network console | Подписка на консоль во вкладке Network
+            // Network console
             ConsoleHelper.OnOutputConsoleLine += line =>
             {
                 Dispatcher.BeginInvoke(new Action(() =>
@@ -69,53 +59,71 @@ namespace OpsCoreControl
             }
 
             // Chat
-            Log.LogMessage += message =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    _mainChatListBox.Items.Add(message);
-                });
-            };
-            Log.LogError += message =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    _mainChatListBox.Items.Add(message);
-                });
-            };
-            Log.LogInfo += message =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    _mainChatListBox.Items.Add(message);
-                });
-            };
-            Log.LogSuccess += message =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    _mainChatListBox.Items.Add(message);
-                });
-            };
+            Log.LogMessage += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
+            Log.LogError += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
+            Log.LogInfo += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
+            Log.LogSuccess += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
             Log.LogProfile += message =>
             {
                 HashSet<string> ignoreList = new HashSet<string>() {"C:\\Users\\Default", "C:\\Users\\All Users", "C:\\Users\\Default User",
                     "C:\\Users\\DefaultAppPool", "C:\\Users\\Все пользователи", "C:\\Users\\Public"};
                 if (!ignoreList.Contains(message))
                 {
-                    Dispatcher.Invoke(() =>
-                    {
-                        _usersProfilesListBox.Items.Add(message);
-                    });
+                    Dispatcher.Invoke(() => _usersProfilesListBox.Items.Add(message));
                 }
             };
-            Log.LogDebug += message =>
+            Log.LogDebug += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
+        }
+
+        private void RenderDashboard(DashboardData d)
+        {
+            // Краткая зона
+            _dashPcUserText.Text = $"ПК: {d.System.PcName}  •  Пользователь: {d.System.UserName}  •  Uptime: {d.System.Uptime}";
+
+            string wifi = d.Wifi.Connected ? $"WiFi: {d.Wifi.Ssid} ({d.Wifi.SignalPercent}%)" : "WiFi: нет";
+            AdapterSnapshot active = d.Adapters.FirstOrDefault(a => a.Status == "Up" && a.Ip != "—");
+            string ip = active != null ? active.Ip : "—";
+            string link = d.Adapters.Any(a => a.Status == "Up") ? "Up" : "Down";
+            _dashNetworkText.Text = $"{wifi}  •  IP: {ip}  •  Линк: {link}";
+
+            _dashPerfText.Text = $"CPU: {d.CpuPercent:F0}%  •  RAM: {d.RamPercent:F0}% ({d.RamUsedMb:F0}/{d.RamTotalMb:F0} МБ)  •  VRAM: {d.VramPercent:F0}%";
+
+            var diskLines = new List<string>();
+            foreach (DiskSnapshot disk in d.Disks)
             {
-                Dispatcher.Invoke(() =>
-                {
-                    _mainChatListBox.Items.Add(message);
-                });
-            };
+                string label = string.IsNullOrEmpty(disk.Label) ? "" : $" \"{disk.Label}\"";
+                string unc = (disk.Type == "Сетевой" && !string.IsNullOrEmpty(disk.Unc)) ? $"  {disk.Unc}" : "";
+                diskLines.Add($"{disk.Letter} [{disk.Type}]{label} — {disk.FreeGb:F0}/{disk.TotalGb:F0} ГБ ({disk.FreePercent:F0}%){unc}");
+            }
+            UpdateListBox(_dashDisksListBox, diskLines, ref _lastDisks);
+
+            // Расширенная зона
+            _extSystemText.Text = $"Батарея: {d.System.Battery}  •  Процессов: {d.System.ProcessCount}  •  Публичный IP: {d.System.PublicIp}";
+            _extDiskActivityText.Text = $"Диск: чтение {d.DiskReadMbSec:F1} МБ/с, запись {d.DiskWriteMbSec:F1} МБ/с";
+
+            List<string> adapterLines = d.Adapters
+                .Select(a => $"{a.Name} [{a.Type}] {a.Status}  IP: {a.Ip}  {a.SpeedMbps} Мбит/с")
+                .ToList();
+            UpdateListBox(_extAdaptersListBox, adapterLines, ref _lastAdapters);
+
+            List<string> usbLines = d.Usb
+                .Select(u => string.IsNullOrEmpty(u.Description) ? u.Name : $"{u.Name} — {u.Description}")
+                .ToList();
+            UpdateListBox(_extUsbListBox, usbLines, ref _lastUsb);
+        }
+
+        private void UpdateListBox(ListBox lb, List<string> items, ref List<string> cache)
+        {
+            if (cache.SequenceEqual(items)) return;   // не изменилось — не дёргаем список
+            cache = items;
+            lb.Items.Clear();
+            foreach (string it in items) lb.Items.Add(it);
+        }
+
+        private void _dashboardToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            bool expand = _dashboardToggleButton.IsChecked == true;
+            _extendedDashboardPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 }
