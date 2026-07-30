@@ -1,5 +1,9 @@
 # OpsCoreControl
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-blue.svg)]()
+[![.NET](https://img.shields.io/badge/.NET%20Framework-4.7.2%2B-512BD4.svg)]()
+
 Десктопная утилита для системного администратора и техподдержки на WPF.
 Собирает в одном окне то, ради чего обычно открывают десяток оснасток:
 службы, процессы, автозагрузку, сетевую диагностику, журналы событий,
@@ -8,6 +12,11 @@
 
 > Приложение требует прав администратора (UAC) — без них часть функций
 > (службы, реестр HKLM, сброс сети, файл подкачки) работать не будет.
+
+## Скриншоты
+
+![Главное окно](docs/screenshots/main.png)
+![Тёмная тема](docs/screenshots/dark.png)
 
 ## Возможности
 
@@ -43,7 +52,7 @@
 
 ## Установка и запуск
 
-1. Скачай последнюю сборку из https://github.com/rmUmind/OpsCoreControl/releases.
+1. Скачай последнюю сборку из [Releases](https://github.com/rmUmind/OpsCoreControl/releases).
 2. Распакуй архив в любую папку.
 3. Запусти `OpsCoreControl.exe` — при старте Windows запросит права
    администратора (UAC), подтверди.
@@ -67,14 +76,14 @@
 | `StartupManager` | автозагрузка |
 | `UserProfileManager` | профили пользователей |
 | `SystemSettingsManager` | блокировка экрана |
+| `PhysicalMonitorBrightnessController` | яркость монитора (ноутбуки) |
 | `EventLogManager` | журнал событий |
 | `HostsManager` | файл hosts |
 | `DashBoard` | сбор данных для панели мониторинга |
 
 ## Отчёт об ошибке
 
-Нашёл баг или есть идея — создай issue:
-https://github.com/rmUmind/OpsCoreControl/issues
+Нашёл баг или есть идея — создай [issue](https://github.com/rmUmind/OpsCoreControl/issues).
 Приложи описание шагов и, если есть, лог из окна приложения
 (правый клик по логу → «Копировать выбранное»).
 
@@ -84,4 +93,4 @@ https://github.com/rmUmind/OpsCoreControl/issues
 
 ## Автор
 
-Разработал rmUmind — (https://github.com/rmUmind).
+Разработал [rmUmind](https://github.com/rmUmind).
