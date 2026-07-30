@@ -1,8 +1,5 @@
 ﻿using OpsCoreControl.HelperClasses;
-using OpsCoreControl.WorkingСlasses;
-using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Controls;
 using static OpsCoreControl.Log;
 
 // Часть главного окна: обработка вкладки Network —

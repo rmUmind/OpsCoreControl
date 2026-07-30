@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using OpsCoreControl.WorkingСlasses;
+﻿using System.Windows;
 using static OpsCoreControl.Log;
 
 // Часть главного окна: обработка вкладки Folder's work —

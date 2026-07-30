@@ -3,14 +3,10 @@ using OpsCoreControl.HelperClasses;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Security.Principal;
+using System.Linq;
 using System.ServiceProcess;
 using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media;
 using static OpsCoreControl.Log;
-using System.Linq;
 
 // Класс для управления системой и службами:
 // перезагрузка/выключение ПК, запуск процессов, оснастки (SystemTool),
