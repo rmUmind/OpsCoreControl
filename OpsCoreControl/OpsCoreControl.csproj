@@ -151,6 +151,17 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include=".github\upgrades\performance-analysis\code-review-findings.md" />
+    <None Include=".github\upgrades\performance-analysis\code-review-fixes.md" />
+    <None Include=".github\upgrades\performance-analysis\code-review-summary.md" />
+    <None Include=".github\upgrades\performance-analysis\final-report.md" />
+    <None Include=".github\upgrades\performance-analysis\refactoring-step-2-changes.md" />
+    <None Include=".github\upgrades\performance-analysis\refactoring-step-3-counter-optimization.md" />
+    <None Include=".github\upgrades\performance-analysis\refactoring-step-4-console-helper-sync.md" />
+    <None Include=".github\upgrades\performance-analysis\refactoring-step-5-filesystem-parallel.md" />
+    <None Include=".github\upgrades\performance-analysis\refactoring-step-6-monitor-async.md" />
+    <None Include=".github\upgrades\performance-analysis\refactoring-step-7-mainwindow-init.md" />
+    <None Include=".github\upgrades\performance-analysis\research-findings.md" />
     <None Include=".gitignore" />
     <None Include="app.manifest" />
     <None Include="packages.config" />

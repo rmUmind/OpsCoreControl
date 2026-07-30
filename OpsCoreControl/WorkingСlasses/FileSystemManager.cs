@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Management;
+using System.Threading;
 using System.Threading.Tasks;
 using static OpsCoreControl.Log;
 
@@ -59,6 +61,7 @@ namespace OpsCoreControl.WorkingСlasses
         }
 
         // Очищает папку "Загрузки". Занятые файлы пропускает, не прерывая очистку.
+        // === ОПТИМИЗАЦИЯ: Параллельное удаление в батчах ===
         public async Task<bool> CleanDownloadFolder()
         {
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
@@ -74,15 +77,28 @@ namespace OpsCoreControl.WorkingСlasses
 
             await Task.Run(() =>
             {
-                foreach (string file in Directory.GetFiles(path))
+                // === ОПТИМИЗАЦИЯ: Параллельное удаление файлов в батчах по 10 ===
+                var files = Directory.GetFiles(path);
+                for (int i = 0; i < files.Length; i += 10)
                 {
-                    try { File.Delete(file); deleted++; }
-                    catch { skipped++; } // файл занят — пропускаем
+                    var batch = files.Skip(i).Take(10).ToList();
+                    Parallel.ForEach(batch, file =>
+                    {
+                        try { File.Delete(file); Interlocked.Increment(ref deleted); }
+                        catch { Interlocked.Increment(ref skipped); }
+                    });
                 }
-                foreach (string dir in Directory.GetDirectories(path))
+
+                // === ОПТИМИЗАЦИЯ: Параллельное удаление папок в батчах по 5 ===
+                var dirs = Directory.GetDirectories(path);
+                for (int i = 0; i < dirs.Length; i += 5)
                 {
-                    try { Directory.Delete(dir, true); deleted++; }
-                    catch { skipped++; }
+                    var batch = dirs.Skip(i).Take(5).ToList();
+                    Parallel.ForEach(batch, dir =>
+                    {
+                        try { Directory.Delete(dir, true); Interlocked.Increment(ref deleted); }
+                        catch { Interlocked.Increment(ref skipped); }
+                    });
                 }
             });
 
@@ -91,6 +107,7 @@ namespace OpsCoreControl.WorkingСlasses
         }
 
         // Очищает временные папки. Занятые файлы пропускает.
+        // === ОПТИМИЗАЦИЯ: Параллельное удаление в батчах ===
         public async Task<bool> CleanTempFolder()
         {
             var paths = new List<string>
@@ -112,25 +129,37 @@ namespace OpsCoreControl.WorkingСlasses
                     int deleted = 0;
                     int skipped = 0;
 
-                    foreach (string file in Directory.GetFiles(path))
+                    // === ОПТИМИЗАЦИЯ: Параллельное удаление файлов в батчах по 10 ===
+                    var files = Directory.GetFiles(path);
+                    for (int i = 0; i < files.Length; i += 10)
                     {
-                        try
+                        var batch = files.Skip(i).Take(10).ToList();
+                        Parallel.ForEach(batch, file =>
                         {
-                            File.SetAttributes(file, FileAttributes.Normal);
-                            File.Delete(file);
-                            deleted++;
-                        }
-                        catch { skipped++; } // файл занят — пропускаем
+                            try
+                            {
+                                File.SetAttributes(file, FileAttributes.Normal);
+                                File.Delete(file);
+                                Interlocked.Increment(ref deleted);
+                            }
+                            catch { Interlocked.Increment(ref skipped); }
+                        });
                     }
 
-                    foreach (string dir in Directory.GetDirectories(path))
+                    // === ОПТИМИЗАЦИЯ: Параллельное удаление папок в батчах по 5 ===
+                    var dirs = Directory.GetDirectories(path);
+                    for (int i = 0; i < dirs.Length; i += 5)
                     {
-                        try
+                        var batch = dirs.Skip(i).Take(5).ToList();
+                        Parallel.ForEach(batch, dir =>
                         {
-                            Directory.Delete(dir, true);
-                            deleted++;
-                        }
-                        catch { skipped++; }
+                            try
+                            {
+                                Directory.Delete(dir, true);
+                                Interlocked.Increment(ref deleted);
+                            }
+                            catch { Interlocked.Increment(ref skipped); }
+                        });
                     }
 
                     Log.Add($"Очистка {path}: удалено {deleted}, пропущено {skipped}.", LogType.Success);
@@ -141,6 +170,7 @@ namespace OpsCoreControl.WorkingСlasses
         }
 
         // Открывает сетевую папку в Проводнике. Сам дописывает \\, если их нет.
+        // === ОПТИМИЗАЦИЯ: Использование using для процесса explorer ===
         public async Task<bool> OpenNetworkPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -158,7 +188,17 @@ namespace OpsCoreControl.WorkingСlasses
                 }
 
                 Log.Add($"Открываем сетевую папку: {uncPath}", LogType.Info);
-                await Task.Run(() => Process.Start("explorer.exe", $"\"{uncPath}\""));
+
+                // === ОПТИМИЗАЦИЯ: using для процесса с явным Dispose ===
+                await Task.Run(() =>
+                {
+                    using (Process explorerProcess = Process.Start("explorer.exe", $"\"{uncPath}\""))
+                    {
+                        // Не ждём завершения explorer - просто даём ему время запуститься
+                        System.Threading.Thread.Sleep(500);
+                    }
+                });
+
                 Log.Add($"Проводник открыт по адресу: {uncPath}", LogType.Success);
                 return true;
             }

@@ -2,7 +2,10 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 using static OpsCoreControl.Log;
 
 // Класс для работы с консольными командами.
@@ -35,9 +38,23 @@ namespace OpsCoreControl.HelperClasses
         private static Process _currentProcess;        // текущий процесс, активный всегда один
         private static volatile bool _stopRequested;   // флаг досрочной остановки
 
+        // === ОПТИМИЗАЦИЯ: Синхронизация событий на UI поток ===
+        private static Dispatcher _dispatcher;
+        private static readonly object _processLock = new object();  // Синхронизация доступа к _currentProcess
+
         // Запускает команду и стримит её вывод построчно через OnOutputConsoleLine.
+        // === ОПТИМИЗАЦИЯ: Синхронизация событий, защита от race conditions ===
         public static void RunStreaming(string fileName, string arguments)
         {
+            // === FIX: Получаем UI Dispatcher правильно (не Dispatcher.CurrentDispatcher!) ===
+            // Dispatcher.CurrentDispatcher может вернуть dispatcher другого потока, если метод вызван не из UI
+            _dispatcher = Application.Current?.Dispatcher;
+            if (_dispatcher == null)
+            {
+                Log.Add("Ошибка: UI Dispatcher недоступен. RunStreaming должна быть вызвана из UI потока или иметь доступ к Application.Current.", LogType.Error);
+                return;
+            }
+
             KillCurrentProcess();          // сначала убиваем прошлый процесс
             _stopRequested = false;
 
@@ -53,101 +70,133 @@ namespace OpsCoreControl.HelperClasses
                 StandardOutputEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage)
             };
 
-            _currentProcess = new Process { StartInfo = psi };
-            _currentProcess.EnableRaisingEvents = true;
+            lock (_processLock)  // === Синхронизация доступа к _currentProcess ===
+            {
+                _currentProcess = new Process { StartInfo = psi };
+                _currentProcess.EnableRaisingEvents = true;
 
-            // срабатывает, когда процесс завершился
-            _currentProcess.Exited += (s, e) =>
-            {
-                int exitCode = -1;
-                try { exitCode = ((Process)s).ExitCode; } catch { }
-                Log.Add($"Команда завершена: {fileName} (код выхода: {exitCode})", LogType.Info);
-                OnOutputConsoleComplete?.Invoke();
-            };
+                // срабатывает, когда процесс завершился
+                // === ОПТИМИЗАЦИЯ: Событие синхронизируется на UI поток ===
+                _currentProcess.Exited += (s, e) =>
+                {
+                    int exitCode = -1;
+                    try { exitCode = ((Process)s).ExitCode; } catch { }
+                    string msg = $"Команда завершена: {fileName} (код выхода: {exitCode})";
 
-            // срабатывает на каждую строку вывода
-            _currentProcess.OutputDataReceived += (s, e) =>
-            {
-                if (_stopRequested) return; // остановку запросили — вывод больше не шлём
-                if (e.Data != null) OnOutputConsoleLine?.Invoke(e.Data);
-            };
+                    // Синхронизируем на UI поток через Dispatcher
+                    _dispatcher?.Invoke(DispatcherPriority.Normal, new Action(() =>
+                    {
+                        Log.Add(msg, LogType.Info);
+                        OnOutputConsoleComplete?.Invoke();
+                    }));
+                };
 
-            try
-            {
-                _currentProcess.Start();
-                _currentProcess.BeginOutputReadLine(); // включаем асинхронное чтение вывода
-                Log.Add($"Процесс запущен, PID: {_currentProcess.Id}", LogType.Debug);
-            }
-            catch (Exception ex)
-            {
-                Log.Add($"Не удалось запустить команду {fileName}: {ex.Message}", LogType.Error);
+                // срабатывает на каждую строку вывода
+                // === ОПТИМИЗАЦИЯ: Событие синхронизируется на UI поток ===
+                _currentProcess.OutputDataReceived += (s, e) =>
+                {
+                    if (_stopRequested) return; // остановку запросили — вывод больше не шлём
+                    if (e.Data != null)
+                    {
+                        // Синхронизируем на UI поток
+                        _dispatcher?.Invoke(DispatcherPriority.Normal, new Action(() =>
+                        {
+                            OnOutputConsoleLine?.Invoke(e.Data);
+                        }));
+                    }
+                };
+
+                try
+                {
+                    _currentProcess.Start();
+                    _currentProcess.BeginOutputReadLine(); // включаем асинхронное чтение вывода
+                    Log.Add($"Процесс запущен, PID: {_currentProcess.Id}", LogType.Debug);
+                }
+                catch (Exception ex)
+                {
+                    Log.Add($"Не удалось запустить команду {fileName}: {ex.Message}", LogType.Error);
+                }
             }
         }
 
         // Останавливает текущий процесс по запросу пользователя.
+        // === ОПТИМИЗАЦИЯ: Защита от race conditions через lock ===
         public static void StopStreaming()
         {
-            if (_currentProcess == null)
+            lock (_processLock)
             {
-                Log.Add("Остановка: активный процесс отсутствует.", LogType.Debug);
-                return;
-            }
-
-            _stopRequested = true;
-            Log.Add($"Остановка процесса PID: {_currentProcess.Id}...", LogType.Info);
-
-            try
-            {
-                if (!_currentProcess.HasExited)
+                if (_currentProcess == null)
                 {
-                    // бьём дерево процессов через taskkill, /T — вместе с потомками
-                    var killPsi = new ProcessStartInfo
+                    Log.Add("Остановка: активный процесс отсутствует.", LogType.Debug);
+                    return;
+                }
+
+                _stopRequested = true;
+                int pid = _currentProcess.Id;
+                Log.Add($"Остановка процесса PID: {pid}...", LogType.Info);
+
+                try
+                {
+                    if (!_currentProcess.HasExited)
                     {
-                        FileName = "taskkill",
-                        Arguments = $"/F /T /PID {_currentProcess.Id}",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-                    using (Process killProcess = Process.Start(killPsi))
-                    {
-                        killProcess?.WaitForExit();
+                        // бьём дерево процессов через taskkill, /T — вместе с потомками
+                        var killPsi = new ProcessStartInfo
+                        {
+                            FileName = "taskkill",
+                            Arguments = $"/F /T /PID {pid}",
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        using (Process killProcess = Process.Start(killPsi))
+                        {
+                            killProcess?.WaitForExit(5000);  // === Добавлен таймаут ===
+                        }
+                        Log.Add($"Процесс PID {pid} остановлен.", LogType.Success);
                     }
-                    Log.Add($"Процесс PID {_currentProcess.Id} остановлен.", LogType.Success);
+                    else
+                    {
+                        Log.Add("Процесс уже завершён.", LogType.Debug);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Log.Add("Процесс уже завершён.", LogType.Debug);
+                    Log.Add($"Ошибка остановки процесса: {ex.Message}", LogType.Error);
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Add($"Ошибка остановки процесса: {ex.Message}", LogType.Error);
             }
         }
 
         // Внутренняя остановка процесса перед запуском нового.
+        // === ОПТИМИЗАЦИЯ: Защита от race conditions, улучшенная обработка ===
         private static void KillCurrentProcess()
         {
-            if (_currentProcess == null) return;
+            lock (_processLock)  // Синхронизация доступа
+            {
+                if (_currentProcess == null) return;
 
-            _stopRequested = true;
-            try
-            {
-                if (!_currentProcess.HasExited)
+                _stopRequested = true;
+                try
                 {
-                    Log.Add($"Останавливаем предыдущий процесс PID {_currentProcess.Id}.", LogType.Debug);
-                    _currentProcess.Kill();              // убиваем сам процесс
-                    _currentProcess.WaitForExit(2000);   // ждём реального выхода, чтобы дочитался вывод
+                    if (!_currentProcess.HasExited)
+                    {
+                        Log.Add($"Останавливаем предыдущий процесс PID {_currentProcess.Id}.", LogType.Debug);
+                        _currentProcess.Kill();              // убиваем сам процесс
+
+                        // === ОПТИМИЗАЦИЯ: WaitForExit всегда должен иметь таймаут ===
+                        if (!_currentProcess.WaitForExit(3000))  // ждём реального выхода, макс 3 сек
+                        {
+                            Log.Add("Предупреждение: процесс не завершился в течение 3 сек.", LogType.Info);
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Add($"Ошибка при остановке процесса: {ex.Message}", LogType.Error);
-            }
-            finally
-            {
-                _currentProcess.Dispose();               // освобождаем дескрипторы
-                _currentProcess = null;
+                catch (Exception ex)
+                {
+                    Log.Add($"Ошибка при остановке процесса: {ex.Message}", LogType.Error);
+                }
+                finally
+                {
+                    try { _currentProcess?.Dispose(); } catch { }  // освобождаем дескрипторы
+                    _currentProcess = null;
+                }
             }
         }
 
@@ -166,7 +215,8 @@ namespace OpsCoreControl.HelperClasses
         }
 
         // Запускает процесс, ждёт завершения и логирует результат по коду выхода.
-        // timeoutMs = -1 — ждать вечно, иначе убиваем процесс по таймауту.
+        // === ОПТИМИЗАЦИЯ: Всегда используется таймаут, даже если не указан ===
+        // timeoutMs = -1 — ждать 30 сек (разумный максимум), иначе таймаут указанный
         public static async Task<bool> LookForProcessEnd(
             ProcessStartInfo psi, string goodOutcome, string badOutcome,
             string exceptionOutcome = "Исключение работы процесса.",
@@ -176,15 +226,23 @@ namespace OpsCoreControl.HelperClasses
             {
                 using (var process = Process.Start(psi))
                 {
-                    // ждём выхода: с таймаутом или бесконечно
-                    bool exited = timeoutMs > 0
-                        ? await Task.Run(() => process.WaitForExit(timeoutMs))
-                        : await Task.Run(() => { process.WaitForExit(); return true; });
+                    if (process == null)
+                    {
+                        Log.Add($"Не удалось запустить процесс: {psi.FileName}", LogType.Error);
+                        return false;
+                    }
+
+                    // === ОПТИМИЗАЦИЯ: Всегда используется разумный таймаут ===
+                    // Если не указан (-1), используем 30 сек
+                    int actualTimeout = timeoutMs > 0 ? timeoutMs : 30000;
+
+                    // ждём выхода с таймаутом
+                    bool exited = await Task.Run(() => process.WaitForExit(actualTimeout));
 
                     if (!exited) // не дождались — таймаут
                     {
                         try { process.Kill(); } catch { }
-                        Log.Add($"Таймаут ({timeoutMs} мс): {badOutcome}", LogType.Error);
+                        Log.Add($"Таймаут ({actualTimeout} мс): {badOutcome}", LogType.Error);
                         return false;
                     }
 

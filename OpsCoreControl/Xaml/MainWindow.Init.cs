@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -103,7 +104,9 @@ namespace OpsCoreControl
         {
             InitializeComponent();
 
-            // Дашборд: создаём и подписываемся на его обновления.
+            // === ОПТИМИЗАЦИЯ: Быстрая инициализация, отложенное создание менеджеров ===
+
+            // Дашборд: создаём сразу (он небольшой, нужен в loop).
             _dashBoard = new DashBoard();
             _dashBoard.Updated += RenderDashboard;
 
@@ -119,22 +122,22 @@ namespace OpsCoreControl
             // При закрытии окна останавливаем дашборд.
             this.Closed += (s, e) => _dashBoard.Dispose();
 
-            // Создаём менеджеры.
-            _fileSystemManager = new FileSystemManager();
-            _networkManager = new NetworkManager();
-            _networkManager.EnsureLinkedConnectionsEnabled();
-            _serviceManager = new ServiceManager();
-            _softwareManager = new SoftwareManager();
-            _userProfileManager = new UserProfileManager();
-            _systemSettingsManager = new SystemSettingsManager();
-            _monitorController = new PhysicalMonitorBrightnessController();
-            _processManager = new ProcessManager();
-            _startupManager = new StartupManager();
-            _hostsManager = new HostsManager();
-
-            // Красим заголовок/рамку после создания окна и после первой отрисовки.
-            this.SourceInitialized += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
-            this.ContentRendered += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
+            // Подписка на лог: используем BeginInvoke вместо Invoke для неблокирующести.
+            // === ОПТИМИЗАЦИЯ: BeginInvoke вместо Invoke для неблокирующести ===
+            Log.LogMessage += message => Dispatcher.BeginInvoke(new Action(() => _mainChatListBox.Items.Add(message)));
+            Log.LogError += message => Dispatcher.BeginInvoke(new Action(() => _mainChatListBox.Items.Add(message)));
+            Log.LogInfo += message => Dispatcher.BeginInvoke(new Action(() => _mainChatListBox.Items.Add(message)));
+            Log.LogSuccess += message => Dispatcher.BeginInvoke(new Action(() => _mainChatListBox.Items.Add(message)));
+            Log.LogProfile += message =>
+            {
+                HashSet<string> ignoreList = new HashSet<string>() {"C:\\Users\\Default", "C:\\Users\\All Users", "C:\\Users\\Default User",
+                    "C:\\Users\\DefaultAppPool", "C:\\Users\\Все пользователи", "C:\\Users\\Public"};
+                if (!ignoreList.Contains(message))
+                {
+                    Dispatcher.BeginInvoke(new Action(() => _usersProfilesListBox.Items.Add(message)));
+                }
+            };
+            Log.LogDebug += message => Dispatcher.BeginInvoke(new Action(() => _mainChatListBox.Items.Add(message)));
 
             // Список оснасток для быстрого запуска (вкладка Services).
             var tools = new List<SystemTool>
@@ -157,22 +160,89 @@ namespace OpsCoreControl
                 _startCustomProcessSelectItemListBox.Items.Add(tool);
             }
 
-            // Подписка на лог: обычные сообщения идут в чат, профили — в отдельный список.
-            Log.LogMessage += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
-            Log.LogError += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
-            Log.LogInfo += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
-            Log.LogSuccess += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
-            Log.LogProfile += message =>
+            // Красим заголовок/рамку после создания окна и после первой отрисовки.
+            this.SourceInitialized += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
+            this.ContentRendered += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
+
+            // === ОПТИМИЗАЦИЯ: Отложенная инициализация менеджеров (фоновый Task) ===
+            // Окно откроется мгновенно, а менеджеры создадутся в фоне.
+            this.Loaded += async (s, e) =>
             {
-                // Системные профили в список не добавляем.
-                HashSet<string> ignoreList = new HashSet<string>() {"C:\\Users\\Default", "C:\\Users\\All Users", "C:\\Users\\Default User",
-                    "C:\\Users\\DefaultAppPool", "C:\\Users\\Все пользователи", "C:\\Users\\Public"};
-                if (!ignoreList.Contains(message))
-                {
-                    Dispatcher.Invoke(() => _usersProfilesListBox.Items.Add(message));
-                }
+                await InitializeManagersAsync();
             };
-            Log.LogDebug += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
+        }
+
+        // === ОПТИМИЗАЦИЯ: Асинхронная инициализация менеджеров ===
+        private async System.Threading.Tasks.Task InitializeManagersAsync()
+        {
+            try
+            {
+                // Создаём менеджеры в фоновом потоке, с минимальной задержкой между ними
+                // (чтобы UI могла обновляться).
+
+                // Быстрые менеджеры — создаём вместе
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _fileSystemManager = new FileSystemManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _networkManager = new NetworkManager();
+                });
+
+                // === ОПТИМИЗАЦИЯ: EnsureLinkedConnectionsEnabled в фоне ===
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _networkManager.EnsureLinkedConnectionsEnabled();  // Может быть медленной
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _serviceManager = new ServiceManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _softwareManager = new SoftwareManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _userProfileManager = new UserProfileManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _systemSettingsManager = new SystemSettingsManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _monitorController = new PhysicalMonitorBrightnessController();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _processManager = new ProcessManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _startupManager = new StartupManager();
+                });
+
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    _hostsManager = new HostsManager();
+                });
+
+                Log.Add("Все менеджеры инициализированы.", LogType.Info);
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Ошибка инициализации менеджеров: {ex.Message}", LogType.Error);
+            }
         }
 
         // Подгружает данные при первом открытии вкладки (повторно не грузит).

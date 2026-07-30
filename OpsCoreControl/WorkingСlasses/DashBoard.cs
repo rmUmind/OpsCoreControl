@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Net;
+using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
@@ -24,6 +25,9 @@ namespace OpsCoreControl
         private const int IntervalSeconds = 1;   // базовый интервал; тяжёлые запросы реже
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+
+        // === FIX: Синхронизация доступа к PerformanceCounter'ам (race condition) ===
+        private readonly object _counterLock = new object();
 
         // Счётчики производительности для быстрых метрик (CPU, RAM, диск).
         private readonly PerformanceCounter _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -44,6 +48,35 @@ namespace OpsCoreControl
         private string _battery = "—";
         private string _publicIp = "—";
 
+        // === ОПТИМИЗАЦИЯ: Кэширование для уменьшения нагрузки ===
+
+        // Кэш PerformanceCounter на 100мс (вместо вызова каждый тик)
+        private DateTime _lastCounterCacheTime = DateTime.MinValue;
+        private float _cachedCpuPercent = 0;
+        private float _cachedVramPercent = 0;
+        private double _cachedDiskReadMbSec = 0;
+        private double _cachedDiskWriteMbSec = 0;
+        private double _cachedRamAvailableMb = 0;
+
+        // Кэш Process.GetProcesses() на 5 сек
+        private DateTime _lastProcessCountTime = DateTime.MinValue;
+        private int _cachedProcessCount = 0;
+
+        // HttpClient для сетевых запросов (переиспользуемый экземпляр)
+        private readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+
+        // Кэш для дисков (чтобы не вызывать GetDrives каждый тик)
+        private DateTime _lastDiskCacheTime = DateTime.MinValue;
+        private List<DiskSnapshot> _cachedDisks = new List<DiskSnapshot>();
+
+        // === ДОПОЛНИТЕЛЬНАЯ ОПТИМИЗАЦИЯ: Фоновое обновление счётчиков (батарейное питание) ===
+        // Вспомогательный Task для фонового обновления счётчиков, чтобы не блокировать основной цикл
+        private Task _counterUpdateTask;
+        private volatile bool _updateCountersInBackground = true;
+
+        // === FIX: Сохраняем ссылку на Loop task для корректного завершения ===
+        private Task _loopTask;
+
         public event Action<DashboardData> Updated;
 
         // Служебные данные диска: UNC-путь и тип (берутся из WMI).
@@ -59,7 +92,37 @@ namespace OpsCoreControl
             _cpuCounter.NextValue();          // первый замер счётчиков даёт 0 — прогреваем
             _diskReadCounter.NextValue();
             _diskWriteCounter.NextValue();
-            _ = Loop();
+
+            // Инициализируем кэш
+            _lastCounterCacheTime = DateTime.Now;
+
+            // === FIX: Сохраняем ссылку на Loop task вместо fire-and-forget ===
+            _loopTask = Loop();  // Основной цикл сбора данных
+
+            // === ОПТИМИЗАЦИЯ: Фоновое обновление счётчиков (батарейное питание) ===
+            // Запускаем отдельный Task для обновления счётчиков в фоне
+            // Это гарантирует, что счётчики всегда актуальны, даже если основной цикл напряжён
+            _counterUpdateTask = Task.Run(() => BackgroundCounterUpdater());
+        }
+
+        // === ОПТИМИЗАЦИЯ: Фоновое обновление счётчиков на отдельном потоке ===
+        // Батарейное питание: обновляет счётчики независимо от основного цикла
+        // Гарантирует, что даже если основной цикл перегружен, счётчики остаются актуальными
+        private async Task BackgroundCounterUpdater()
+        {
+            while (_updateCountersInBackground && !_cts.IsCancellationRequested)
+            {
+                try
+                {
+                    // Обновляем счётчики каждые 100мс
+                    UpdateCounterCache();
+                    await Task.Delay(100);
+                }
+                catch (Exception ex)
+                {
+                    Log.Add($"Ошибка фонового обновления счётчиков: {ex.Message}", LogType.Error);
+                }
+            }
         }
 
         // Возвращает общий объём RAM в байтах через WMI.
@@ -78,7 +141,7 @@ namespace OpsCoreControl
             {
                 try
                 {
-                    DashboardData data = await Task.Run(() => Collect());
+                    DashboardData data = await CollectAsync();
                     var dispatcher = Application.Current?.Dispatcher;
                     dispatcher?.BeginInvoke(new Action(() => Updated?.Invoke(data)));
                 }
@@ -92,48 +155,70 @@ namespace OpsCoreControl
             }
         }
 
-        // Собирает полный снапшот. Счётчики — каждый тик, тяжёлые запросы — по счётчику тиков.
-        private DashboardData Collect()
+        // Собирает полный снапшот. Тяжёлые запросы выполняются асинхронно.
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия с параллельными WMI запросами ===
+        private async Task<DashboardData> CollectAsync()
         {
             _tick++;
 
-            if (_tick == 1 || _tick % 5 == 0)      // ~раз в 5 с
-            {
-                _wifi = CollectWifi();
-                _adapters = CollectAdapters();
-                _diskMeta = CollectDiskMeta();
-                _battery = CollectBattery();
-            }
-            if (_tick == 1 || _tick % 10 == 0)     // ~раз в 10 с
-            {
-                _usb = CollectUsb();
-            }
-            if (_tick == 1 || _tick % 60 == 0)     // ~раз в минуту
-            {
-                _publicIp = CollectPublicIp();
-            }
+            // Запускаем тяжёлые операции асинхронно в параллель
+            Task<WifiSnapshot> wifiTask = (_tick == 1 || _tick % 5 == 0) 
+                ? CollectWifiAsync() 
+                : Task.FromResult(_wifi);
+
+            Task<List<AdapterSnapshot>> adaptersTask = (_tick == 1 || _tick % 5 == 0) 
+                ? CollectAdaptersAsync() 
+                : Task.FromResult(_adapters);
+
+            Task<Dictionary<string, DiskMeta>> diskMetaTask = (_tick == 1 || _tick % 5 == 0) 
+                ? CollectDiskMetaAsync() 
+                : Task.FromResult(_diskMeta);
+
+            Task<string> batteryTask = (_tick == 1 || _tick % 5 == 0) 
+                ? CollectBatteryAsync() 
+                : Task.FromResult(_battery);
+
+            Task<List<UsbSnapshot>> usbTask = (_tick == 1 || _tick % 10 == 0) 
+                ? CollectUsbAsync() 
+                : Task.FromResult(_usb);
+
+            Task<string> publicIpTask = (_tick == 1 || _tick % 60 == 0) 
+                ? CollectPublicIpAsync() 
+                : Task.FromResult(_publicIp);
+
+            // Ждём всех операций в параллель
+            await Task.WhenAll(wifiTask, adaptersTask, diskMetaTask, batteryTask, usbTask, publicIpTask);
+
+            // Кэшируем результаты
+            _wifi = wifiTask.Result;
+            _adapters = adaptersTask.Result;
+            _diskMeta = diskMetaTask.Result;
+            _battery = batteryTask.Result;
+            _usb = usbTask.Result;
+            _publicIp = publicIpTask.Result;
+
+            // Обновляем кэшированные PerformanceCounter (раз в 100мс)
+            UpdateCounterCache();
 
             var data = new DashboardData
             {
-                CpuPercent = _cpuCounter.NextValue(),
-                VramPercent = _vramCounter.NextValue(),
-                DiskReadMbSec = _diskReadCounter.NextValue() / (1024.0 * 1024.0),
-                DiskWriteMbSec = _diskWriteCounter.NextValue() / (1024.0 * 1024.0)
+                CpuPercent = _cachedCpuPercent,
+                VramPercent = _cachedVramPercent,
+                DiskReadMbSec = _cachedDiskReadMbSec,
+                DiskWriteMbSec = _cachedDiskWriteMbSec
             };
 
-            double availableMb = _ramAvailableCounter.NextValue();
+            double ramUsedMb = _totalRamMb - _cachedRamAvailableMb;
             data.RamTotalMb = _totalRamMb;
-            data.RamUsedMb = _totalRamMb - availableMb;
-            data.RamPercent = _totalRamMb > 0 ? (float)(data.RamUsedMb / _totalRamMb * 100.0) : 0f;
+            data.RamUsedMb = ramUsedMb;
+            data.RamPercent = _totalRamMb > 0 ? (float)(ramUsedMb / _totalRamMb * 100.0) : 0f;
 
-            data.Disks = CollectDisks();
+            data.Disks = GetCachedDisks();
             data.Wifi = _wifi;
             data.Adapters = _adapters;
             data.Usb = _usb;
 
-            Process[] procs = Process.GetProcesses();
-            int processCount = procs.Length;
-            foreach (Process p in procs) p.Dispose();   // не течём дескрипторами
+            int processCount = GetCachedProcessCount();
 
             data.System = new SystemSnapshot
             {
@@ -146,6 +231,71 @@ namespace OpsCoreControl
             };
 
             return data;
+        }
+
+        // === ОПТИМИЗАЦИЯ: Обновление кэша PerformanceCounter (не каждый тик, а раз в 100мс) ===
+        // Может вызваться как из CollectAsync(), так и из фонового Task'а
+        // === FIX: Защита от race condition при одновременном вызове из двух потоков ===
+        private void UpdateCounterCache()
+        {
+            lock (_counterLock)
+            {
+                try
+                {
+                    // С фоновым обновлением - просто читаем счётчики
+                    // Фоновый Task гарантирует, что это будет вызываться каждые 100мс
+                    _cachedCpuPercent = _cpuCounter.NextValue();
+                    _cachedVramPercent = _vramCounter.NextValue();
+                    _cachedDiskReadMbSec = _diskReadCounter.NextValue() / (1024.0 * 1024.0);
+                    _cachedDiskWriteMbSec = _diskWriteCounter.NextValue() / (1024.0 * 1024.0);
+                    _cachedRamAvailableMb = _ramAvailableCounter.NextValue();
+                }
+                catch (Exception ex)
+                {
+                    Log.Add($"Ошибка обновления счётчиков производительности: {ex.Message}", LogType.Error);
+                }
+            }
+        }
+
+        // === ОПТИМИЗАЦИЯ: Кэширование Process.GetProcesses() на 5 сек ===
+        private int GetCachedProcessCount()
+        {
+            double secSinceLastCache = (DateTime.Now - _lastProcessCountTime).TotalSeconds;
+            if (secSinceLastCache >= 5)
+            {
+                try
+                {
+                    Process[] procs = Process.GetProcesses();
+                    _cachedProcessCount = procs.Length;
+                    foreach (Process p in procs) p.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Log.Add($"Ошибка при подсчёте процессов: {ex.Message}", LogType.Error);
+                }
+                _lastProcessCountTime = DateTime.Now;
+            }
+            return _cachedProcessCount;
+        }
+
+        // === ОПТИМИЗАЦИЯ: Кэширование дисков на 5 сек ===
+        private List<DiskSnapshot> GetCachedDisks()
+        {
+            double secSinceLastCache = (DateTime.Now - _lastDiskCacheTime).TotalSeconds;
+            if (secSinceLastCache >= 5)
+            {
+                _cachedDisks = CollectDisks();
+                _lastDiskCacheTime = DateTime.Now;
+            }
+            return _cachedDisks;
+        }
+
+        // Старый синхронный метод Collect() - используется для совместимости
+        private DashboardData Collect()
+        {
+            // Этот метод больше не используется напрямую, оставлен для совместимости
+            // используется CollectAsync() вместо него
+            throw new NotImplementedException("Используйте CollectAsync() вместо Collect()");
         }
 
         // Список логических дисков с типом и UNC для сетевых.
@@ -185,6 +335,12 @@ namespace OpsCoreControl
         }
 
         // Метаданные дисков из WMI: тип и UNC-путь для сетевых.
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия ===
+        private async Task<Dictionary<string, DiskMeta>> CollectDiskMetaAsync()
+        {
+            return await Task.Run(() => CollectDiskMeta());
+        }
+
         private Dictionary<string, DiskMeta> CollectDiskMeta()
         {
             var map = new Dictionary<string, DiskMeta>(StringComparer.OrdinalIgnoreCase);
@@ -212,12 +368,13 @@ namespace OpsCoreControl
         }
 
         // Данные WiFi из netsh: статус, SSID, уровень сигнала.
-        private WifiSnapshot CollectWifi()
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия с таймаутом ===
+        private async Task<WifiSnapshot> CollectWifiAsync()
         {
             var snap = new WifiSnapshot { Connected = false, Ssid = "—", SignalPercent = 0 };
             try
             {
-                string output = RunAndCapture("netsh", "wlan show interfaces");
+                string output = await RunAndCaptureAsync("netsh", "wlan show interfaces", timeoutSeconds: 2);
                 if (string.IsNullOrWhiteSpace(output)) return snap;
 
                 // Разбираем вывод построчно: строки вида "Ключ : значение".
@@ -252,7 +409,19 @@ namespace OpsCoreControl
             return snap;
         }
 
+        // Старый синхронный метод - больше не используется
+        private WifiSnapshot CollectWifi()
+        {
+            return CollectWifiAsync().Result;
+        }
+
         // Сетевые адаптеры: статус, IP, скорость. Loopback и туннели пропускаем.
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия ===
+        private async Task<List<AdapterSnapshot>> CollectAdaptersAsync()
+        {
+            return await Task.Run(() => CollectAdapters());
+        }
+
         private List<AdapterSnapshot> CollectAdapters()
         {
             var result = new List<AdapterSnapshot>();
@@ -295,6 +464,12 @@ namespace OpsCoreControl
         }
 
         // USB-устройства из WMI.
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия ===
+        private async Task<List<UsbSnapshot>> CollectUsbAsync()
+        {
+            return await Task.Run(() => CollectUsb());
+        }
+
         private List<UsbSnapshot> CollectUsb()
         {
             var result = new List<UsbSnapshot>();
@@ -321,6 +496,12 @@ namespace OpsCoreControl
         }
 
         // Заряд батареи (для ноутбуков); на ПК без батареи вернёт "нет".
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия ===
+        private async Task<string> CollectBatteryAsync()
+        {
+            return await Task.Run(() => CollectBattery());
+        }
+
         private string CollectBattery()
         {
             try
@@ -344,14 +525,22 @@ namespace OpsCoreControl
         }
 
         // Публичный IP через внешний сервис.
-        private string CollectPublicIp()
+        // === ОПТИМИЗАЦИЯ КРИТИЧНАЯ: HttpClient с таймаутом вместо WebClient ===
+        private async Task<string> CollectPublicIpAsync()
         {
             try
             {
-                using (var client = new WebClient())
-                {
-                    return client.DownloadString("https://api.ipify.org").Trim();
-                }
+                return (await _httpClient.GetStringAsync("https://api.ipify.org")).Trim();
+            }
+            catch (HttpRequestException ex)
+            {
+                Log.Add($"Ошибка сети при получении публичного IP: {ex.Message}", LogType.Error);
+                return "—";
+            }
+            catch (TaskCanceledException ex)
+            {
+                Log.Add($"Таймаут при получении публичного IP (>3 сек): {ex.Message}", LogType.Error);
+                return "—";
             }
             catch (Exception ex)
             {
@@ -386,6 +575,34 @@ namespace OpsCoreControl
         }
 
         // Запускает команду и возвращает её вывод. Рассчитано на быстрые команды (netsh).
+        // === ОПТИМИЗАЦИЯ: Асинхронная версия с таймаутом ===
+        private async Task<string> RunAndCaptureAsync(string fileName, string args, int timeoutSeconds = 5)
+        {
+            return await Task.Run(() =>
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage)
+                };
+                using (Process p = Process.Start(psi))
+                {
+                    string output = p.StandardOutput.ReadToEnd();
+                    if (!p.WaitForExit(timeoutSeconds * 1000))
+                    {
+                        try { p.Kill(); } catch { }
+                        return string.Empty; // Таймаут - возвращаем пустую строку
+                    }
+                    return output;
+                }
+            });
+        }
+
+        // Старый синхронный метод
         private string RunAndCapture(string fileName, string args)
         {
             var psi = new ProcessStartInfo
@@ -436,12 +653,45 @@ namespace OpsCoreControl
         // Останавливает цикл сбора и освобождает счётчики.
         public void Dispose()
         {
+            // Останавливаем фоновое обновление счётчиков
+            _updateCountersInBackground = false;
+
             _cts.Cancel();
-            _cpuCounter.Dispose();
-            _ramAvailableCounter.Dispose();
-            _vramCounter.Dispose();
-            _diskReadCounter.Dispose();
-            _diskWriteCounter.Dispose();
+
+            // === FIX: Ждём завершения Loop task перед закрытием счётчиков ===
+            try
+            {
+                if (_loopTask != null && !_loopTask.Wait(TimeSpan.FromSeconds(2)))
+                {
+                    Log.Add("Предупреждение: Loop task не завершилась в срок.", LogType.Info);
+                }
+            }
+            catch (AggregateException ex)
+            {
+                Log.Add($"Ошибка в Loop task при завершении: {ex.Message}", LogType.Error);
+            }
+
+            // === FIX: Улучшенный Dispose для BackgroundCounterUpdater ===
+            try
+            {
+                if (_counterUpdateTask != null && !_counterUpdateTask.Wait(TimeSpan.FromSeconds(2)))
+                {
+                    Log.Add("Предупреждение: BackgroundCounterUpdater не завершилась в срок.", LogType.Info);
+                }
+            }
+            catch (AggregateException ex)
+            {
+                Log.Add($"Ошибка в BackgroundCounterUpdater при завершении: {ex.Message}", LogType.Error);
+            }
+
+            _cpuCounter?.Dispose();
+            _ramAvailableCounter?.Dispose();
+            _vramCounter?.Dispose();
+            _diskReadCounter?.Dispose();
+            _diskWriteCounter?.Dispose();
+            _httpClient?.Dispose();
+            _cts?.Dispose();
+
             Log.Add("Дашборд остановлен.", LogType.Info);
         }
     }

@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using static OpsCoreControl.Log;
 
 // Класс управления яркостью мониторов через Win32 API (dxva2.dll).
@@ -55,6 +57,12 @@ public class PhysicalMonitorBrightnessController : IDisposable
         return Set(brightness, true);
     }
 
+    // === ОПТИМИЗАЦИЯ: Асинхронная версия ===
+    public async Task<bool> SetAsync(uint brightness, CancellationToken cancellationToken = default)
+    {
+        return await SetAsync(brightness, true, cancellationToken);
+    }
+
     private bool Set(uint brightness, bool refreshMonitorsIfNeeded)
     {
         try
@@ -90,6 +98,59 @@ public class PhysicalMonitorBrightnessController : IDisposable
 
             Log.Add($"Яркость выставлена на {brightness}%.", LogType.Success);
             return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Add($"Ошибка при выставлении яркости: {ex.Message}", LogType.Error);
+            return false;
+        }
+    }
+
+    // === ОПТИМИЗАЦИЯ: Асинхронная установка яркости с таймаутом ===
+    private async Task<bool> SetAsync(uint brightness, bool refreshMonitorsIfNeeded, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await Task.Run(() =>
+            {
+                bool isSomeFail = false;
+                foreach (var monitor in Monitors)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        return false;
+
+                    uint realNewValue = (monitor.MaxValue - monitor.MinValue) * brightness / 100 + monitor.MinValue;
+                    if (SetMonitorBrightness(monitor.Handle, realNewValue))
+                    {
+                        monitor.CurrentValue = realNewValue;
+                    }
+                    else
+                    {
+                        isSomeFail = true;
+                        if (refreshMonitorsIfNeeded) break;
+                    }
+                }
+
+                if (refreshMonitorsIfNeeded && (isSomeFail || !Monitors.Any()))
+                {
+                    UpdateMonitors();
+                    return Set(brightness, false);
+                }
+
+                if (isSomeFail)
+                {
+                    Log.Add($"Не удалось выставить яркость {brightness}% на всех мониторах.", LogType.Error);
+                    return false;
+                }
+
+                Log.Add($"Яркость выставлена на {brightness}%.", LogType.Success);
+                return true;
+            }, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Add("Установка яркости отменена пользователем.", LogType.Info);
+            return false;
         }
         catch (Exception ex)
         {
@@ -155,6 +216,61 @@ public class PhysicalMonitorBrightnessController : IDisposable
 
         this.Monitors = monitors;
         Log.Add($"Найдено мониторов с управлением яркостью: {monitors.Count}", LogType.Debug);
+    }
+
+    // === ОПТИМИЗАЦИЯ: Асинхронное обновление мониторов с таймаутом ===
+    private async Task UpdateMonitorsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Run(() =>
+            {
+                DisposeMonitors(this.Monitors);
+                var monitors = new List<MonitorInfo>();
+
+                EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData) =>
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        return false;
+
+                    uint physicalMonitorsCount = 0;
+                    if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, ref physicalMonitorsCount))
+                        return true;
+
+                    var physicalMonitors = new PHYSICAL_MONITOR[physicalMonitorsCount];
+                    if (!GetPhysicalMonitorsFromHMONITOR(hMonitor, physicalMonitorsCount, physicalMonitors))
+                        return true;
+
+                    foreach (PHYSICAL_MONITOR physicalMonitor in physicalMonitors)
+                    {
+                        uint minValue = 0, currentValue = 0, maxValue = 0;
+                        if (!GetMonitorBrightness(physicalMonitor.hPhysicalMonitor, ref minValue, ref currentValue, ref maxValue))
+                        {
+                            DestroyPhysicalMonitor(physicalMonitor.hPhysicalMonitor);
+                            continue;
+                        }
+
+                        var info = new MonitorInfo
+                        {
+                            Handle = physicalMonitor.hPhysicalMonitor,
+                            MinValue = minValue,
+                            CurrentValue = currentValue,
+                            MaxValue = maxValue,
+                        };
+                        monitors.Add(info);
+                    }
+
+                    return true;
+                }, IntPtr.Zero);
+
+                this.Monitors = monitors;
+                Log.Add($"Найдено мониторов с управлением яркостью: {monitors.Count}", LogType.Debug);
+            }, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Add("Обновление списка мониторов отменено.", LogType.Info);
+        }
     }
 
     // Освобождает дескрипторы мониторов.
