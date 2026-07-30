@@ -40,9 +40,18 @@ namespace OpsCoreControl
         private bool _servicesLoaded;
         private bool _foldersLoaded;
         private bool _programsLoaded;
-        private bool _isDarkTheme;
+        private bool _isDarkTheme = true;
         private bool _profilesLoaded;
         private bool _systemSettingsLoaded;
+
+        // Высота нижней панели логов в свёрнутом режиме (должна совпадать с Height в XAML).
+        private const double LogRowCollapsed = 210;
+
+        // На сколько пикселей окно выросло из-за раскрытой расширенной зоны дашборда.
+        private double _dashAdd;
+
+        // Раскрыта ли панель логов на всю высоту (кнопка «Показать все логи»).
+        private bool _logExpanded;
 
         // Анти-мерцание: перерисовываем списки только при изменении.
         private List<string> _lastDisks = new List<string>();
@@ -100,6 +109,7 @@ namespace OpsCoreControl
             SendMessage(hwnd, WM_NCACTIVATE, IntPtr.Zero, IntPtr.Zero);
             SendMessage(hwnd, WM_NCACTIVATE, new IntPtr(1), IntPtr.Zero);
         }
+
 
         public MainWindow()
         {
@@ -177,12 +187,7 @@ namespace OpsCoreControl
             Log.LogDebug += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
         }
 
-        // Загружает профили пользователей (строки приходят в список через событие лога LogProfile).
-        private async Task LoadProfilesAsync()
-        {
-            _usersProfilesListBox.Items.Clear();
-            await _userProfileManager.LoadUserProfiles();
-        }
+
 
         // Подгружает данные при первом открытии вкладки (повторно не грузит).
         private async void _mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -284,11 +289,41 @@ namespace OpsCoreControl
             foreach (string it in items) lb.Items.Add(it);
         }
 
-        // Показывает или прячет расширенную зону дашборда.
+        // Раскрывает расширенную зону дашборда и расширяет окно под неё,
+        // чтобы зона показывалась целиком без прокрутки (как и задумано).
         private void _dashboardToggleButton_Click(object sender, RoutedEventArgs e)
         {
             bool expand = _dashboardToggleButton.IsChecked == true;
             _extendedDashboardPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+
+            if (expand)
+            {
+                // Ждём раскладки, чтобы узнать реальную высоту раскрытой зоны.
+                _extendedDashboardPanel.UpdateLayout();
+                double need = _extendedDashboardPanel.ActualHeight + 14; // + разделитель и отступы
+                if (need <= 14) need = 300; // защита, если измерение не сработало
+
+                // Не даём окну вылезти за рабочую область экрана; остаток уйдёт в ScrollViewer.
+                double maxH = SystemParameters.WorkArea.Height - 40;
+                double add = Math.Min(need, Math.Max(0, maxH - Height));
+
+                _dashAdd = add;
+                Height += add;
+
+                // В свёрнутом режиме логов строка фиксирована — увеличиваем её вручную.
+                // В режиме «все логи» строка = *, она сама заберёт долю от новой высоты окна.
+                if (!_logExpanded)
+                    _logRow.Height = new GridLength(LogRowCollapsed + add);
+            }
+            else
+            {
+                Height -= _dashAdd;
+
+                if (!_logExpanded)
+                    _logRow.Height = new GridLength(LogRowCollapsed);
+
+                _dashAdd = 0;
+            }
         }
 
         // URL страницы создания issue на GitHub (для Bug Report).
@@ -334,6 +369,26 @@ namespace OpsCoreControl
             }
             Clipboard.SetText(sb.ToString());
             Log.Add("Все логи скопированы в буфер обмена.", LogType.Success);
+        }
+
+        // Раскрывает или сворачивает панель логов. В раскрытом виде лог и дашборд делят окно
+        // пополам с вкладками и тянутся при изменении размера окна.
+        private void _expandLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            _logExpanded = _expandLogToggleButton.IsChecked == true;
+
+            if (_logExpanded)
+            {
+                // * — делит окно пополам; высота окна уже учитывает раскрытый дашборд.
+                _logRow.Height = new GridLength(1, GridUnitType.Star);
+                _expandLogToggleButton.Content = "Свернуть логи";
+            }
+            else
+            {
+                // Возвращаем базу + добавку дашборда, если он сейчас раскрыт.
+                _logRow.Height = new GridLength(LogRowCollapsed + _dashAdd);
+                _expandLogToggleButton.Content = "Показать все логи";
+            }
         }
     }
 }

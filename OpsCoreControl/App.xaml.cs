@@ -19,7 +19,7 @@ namespace OpsCoreControl
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
 
-            SetTheme(false); // по умолчанию светлая тема
+            SetTheme(true); // по умолчанию темная тема
         }
 
         // Меняет палитру приложения. Стили ссылаются на эти кисти через DynamicResource,

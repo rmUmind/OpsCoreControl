@@ -8,13 +8,13 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="Инфо" Click="_showAbout_Click"/>
             <MenuItem Header="Bug Report" Click="_showBugReport_Click"/>
-            <MenuItem x:Name="_darkThemeMenuItem" Header="Тёмная тема" Click="_toggleTheme_Click"/>
+            <MenuItem x:Name="_darkThemeMenuItem" Header="Светлая тема" Click="_toggleTheme_Click"/>
         </Menu>
 
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition x:Name="_logRow" Height="210"/>
             </Grid.RowDefinitions>
 
             <TabControl Grid.Row="0" TabStripPlacement="Left" x:Name="_mainTabControl" SelectionChanged="_mainTabControl_SelectionChanged">
@@ -451,20 +451,25 @@
             <!-- ========== Низ: лог и дашборд ========== -->
             <Grid Grid.Row="1" Margin="4,2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
+                    <!-- Обе колонки звёздные: лог и дашборд растут по ширине вместе с окном. -->
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.4*"/>
                 </Grid.ColumnDefinitions>
 
+                <!-- Лог: тянется по высоте панели, сам прокручивается вниз при новых строках. -->
                 <GroupBox Grid.Column="0" Header="Лог">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Button Grid.Row="0" Content="Скопировать весь лог" Click="_copyAllLogsButton_Click"
-                HorizontalAlignment="Right"/>
-                        <ListBox Grid.Row="1" x:Name="_mainChatListBox" Width="410" Height="140"
-                 ScrollViewer.CanContentScroll="True">
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ToggleButton x:Name="_expandLogToggleButton" Content="Показать все логи"
+                              Click="_expandLogButton_Click"/>
+                            <Button Content="Скопировать весь лог" Click="_copyAllLogsButton_Click"/>
+                        </StackPanel>
+                        <ListBox Grid.Row="1" x:Name="_mainChatListBox" ScrollViewer.CanContentScroll="True"
+                     local:AutoScrollBehavior.AutoScroll="True">
                             <ListBox.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
@@ -474,23 +479,26 @@
                     </Grid>
                 </GroupBox>
 
+                <!-- Дашборд: краткая зона и диски видны всегда без прокрутки;
+         скролл появляется только внутри расширенной зоны, когда она раскрыта. -->
                 <GroupBox Grid.Column="1" Header="Дашборд">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel>
-                            <DockPanel LastChildFill="True">
-                                <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
-                                              Content="ⓘ" Width="28" Height="26" VerticalAlignment="Top"
-                                              Click="_dashboardToggleButton_Click"/>
-                                <StackPanel>
-                                    <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
-                                    <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
-                                    <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
-                                </StackPanel>
-                            </DockPanel>
+                    <StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
+                              Content="ⓘ" Width="28" Height="26" VerticalAlignment="Top"
+                              Click="_dashboardToggleButton_Click"/>
+                            <StackPanel>
+                                <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
+                                <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
+                                <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
+                            </StackPanel>
+                        </DockPanel>
 
-                            <TextBlock Text="Диски:" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                            <ListBox x:Name="_dashDisksListBox" Height="66" HorizontalAlignment="Stretch"/>
+                        <TextBlock Text="Диски:" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                        <ListBox x:Name="_dashDisksListBox" Height="70" HorizontalAlignment="Stretch"/>
 
+                        <!-- Скролл только здесь и только когда зона раскрыта. -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
                                 <Separator Margin="0,6"/>
                                 <TextBlock Text="Система" FontWeight="SemiBold"/>
@@ -501,8 +509,8 @@
                                 <TextBlock Text="USB-устройства" FontWeight="SemiBold" Margin="0,6,0,0"/>
                                 <ListBox x:Name="_extUsbListBox" Height="100"/>
                             </StackPanel>
-                        </StackPanel>
-                    </ScrollViewer>
+                        </ScrollViewer>
+                    </StackPanel>
                 </GroupBox>
             </Grid>
         </Grid>

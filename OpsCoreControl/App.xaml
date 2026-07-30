@@ -304,24 +304,25 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
                         <Border x:Name="Bd" Background="{DynamicResource PanelBg}"
-                                BorderBrush="{DynamicResource BorderBr}" BorderThickness="1"
-                                Padding="{TemplateBinding Padding}" Margin="0,1">
+                        BorderBrush="{DynamicResource BorderBr}" BorderThickness="1"
+                        Padding="{TemplateBinding Padding}" Margin="0,1">
                             <ContentPresenter ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <!-- Hover только над самим заголовком (SourceName=Bd), а не над содержимым вкладки. -->
+                            <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ButtonHover}"/>
+                            </Trigger>
+                            <!-- Выбранная вкладка — последней, чтобы hover не перебивал её вид. -->
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ButtonBg}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ButtonHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
         <!-- Меню. -->
         <Style TargetType="Menu">
             <Setter Property="Background" Value="{DynamicResource PanelBg}"/>
