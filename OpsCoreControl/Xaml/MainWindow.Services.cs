@@ -5,10 +5,12 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using static OpsCoreControl.Log;
 using static OpsCoreControl.ServiceManager;
 
-// Часть главного окна: обработка вкладки Services —
+// Часть главного окна: обработка вкладки Службы —
 // управление службами (старт/стоп/рестарт/тип запуска), перезагрузка и выключение ПК,
 // запуск оснасток и процессов, копирование выбранных строк лога.
 namespace OpsCoreControl
@@ -17,11 +19,17 @@ namespace OpsCoreControl
     {
         private List<ServiceInfo> _allServices = new List<ServiceInfo>();
 
-        private void _refreshServicesButton_Click(object sender, RoutedEventArgs e)
+        // Перечитывает службы и применяет текущий фильтр.
+        private void RefreshServices()
         {
             _allServices = _serviceManager.GetServices();
             FilterServices();
             Log.Add($"Служб загружено: {_allServices.Count}", LogType.Info);
+        }
+
+        private void _refreshServicesButton_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshServices();
         }
 
         // Фильтрует список служб при вводе.
@@ -58,7 +66,7 @@ namespace OpsCoreControl
             ServiceInfo svc = SelectedService();
             if (svc == null) return;
             _serviceManager.StartService(svc.ServiceName);
-            _refreshServicesButton_Click(sender, e);
+            RefreshServices();
         }
 
         private void _stopServiceButton_Click(object sender, RoutedEventArgs e)
@@ -66,7 +74,7 @@ namespace OpsCoreControl
             ServiceInfo svc = SelectedService();
             if (svc == null) return;
             _serviceManager.StopService(svc.ServiceName);
-            _refreshServicesButton_Click(sender, e);
+            RefreshServices();
         }
 
         private void _restartServiceButton_Click(object sender, RoutedEventArgs e)
@@ -74,7 +82,7 @@ namespace OpsCoreControl
             ServiceInfo svc = SelectedService();
             if (svc == null) return;
             _serviceManager.RestartService(svc.ServiceName);
-            _refreshServicesButton_Click(sender, e);
+            RefreshServices();
         }
 
         // Меняет тип запуска выбранной службы (Automatic / Manual / Disabled).
@@ -86,14 +94,14 @@ namespace OpsCoreControl
             if (int.TryParse(tag, out int type))
             {
                 _serviceManager.SetStartupType(svc.ServiceName, type);
-                _refreshServicesButton_Click(sender, e);
+                RefreshServices();
             }
         }
 
         // Перезапуск службы печати.
         private async void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.RebootPrintSpooler("Spooler"));
+            await _serviceManager.RebootPrintSpooler("Spooler");
         }
 
         // Перезагрузка ПК (с подтверждением).
@@ -101,7 +109,7 @@ namespace OpsCoreControl
         {
             MessageBoxResult confirm = MessageBox.Show("Перезагрузить компьютер сейчас?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.RebootPC());
+            await _serviceManager.RebootPC();
         }
 
         // Выключение ПК (с подтверждением).
@@ -109,7 +117,7 @@ namespace OpsCoreControl
         {
             MessageBoxResult confirm = MessageBox.Show("Выключить компьютер сейчас? Несохранённые данные будут потеряны.", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.ShutdownPC());
+            await _serviceManager.ShutdownPC();
         }
 
         // Кладёт имя выбранной оснастки в поле ввода.

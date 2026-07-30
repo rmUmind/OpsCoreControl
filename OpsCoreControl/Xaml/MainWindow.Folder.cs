@@ -14,13 +14,13 @@ namespace OpsCoreControl
         // Очищает папку «Загрузки».
         private async void _cleanDownloadFolder_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _fileSystemManager.CleanDownloadFolder());
+            await _fileSystemManager.CleanDownloadFolder();
         }
 
         // Очищает временные папки.
         private async void _cleanTempFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _fileSystemManager.CleanTempFolder());
+            await _fileSystemManager.CleanTempFolder();
         }
 
         // Подключает сетевую шару как диск. Буква необязательна: если пусто — подберётся автоматически.
@@ -28,8 +28,7 @@ namespace OpsCoreControl
         {
             string path = _setNetworkPathTextBox.Text;            // например, 10.19.120.10\mintrans
             string letter = _setNameForNewLogicalDiskTextBox.Text; // пусто → авто
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _networkManager.MapNetworkDrive(letter, path));
+            await _networkManager.MapNetworkDrive(letter, path);
             RefreshLogicalDisks();
         }
 
@@ -37,8 +36,7 @@ namespace OpsCoreControl
         private async void _openNetworkPathButton_Click(object sender, RoutedEventArgs e)
         {
             string path = _setNetworkPathTextBox.Text;
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _fileSystemManager.OpenNetworkPath(path));
+            await _fileSystemManager.OpenNetworkPath(path);
         }
 
         // Отключает выбранный сетевой диск.
@@ -56,8 +54,7 @@ namespace OpsCoreControl
                 return;
             }
             string letter = selected.Split(' ')[0]; // первый токен — буква диска ("Z:")
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _networkManager.UnmapNetworkDrive(letter));
+            await _networkManager.UnmapNetworkDrive(letter);
             RefreshLogicalDisks();
         }
 
@@ -77,8 +74,7 @@ namespace OpsCoreControl
                 return;
             }
             string letter = selected.Split(' ')[0]; // первый токен — буква диска
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _networkManager.RenameLogicalDisk(letter, newName));
+            await _networkManager.RenameLogicalDisk(letter, newName);
             RefreshLogicalDisks();
         }
 

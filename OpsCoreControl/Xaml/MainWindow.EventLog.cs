@@ -14,17 +14,28 @@ namespace OpsCoreControl
         // Загружает записи журнала с учётом выбранного журнала, фильтра по типу и количества.
         private void _loadEventLogButton_Click(object sender, RoutedEventArgs e)
         {
-            // Какой журнал читать (System / Application).
+            LoadEventLog();
+        }
+
+        // Показывает полный текст выбранной записи в панели деталей.
+        private void _eventLogListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_eventLogListBox.SelectedItem is EventLogEntryInfo entry)
+            {
+                _eventLogDetailTextBox.Text = entry.Message;
+            }
+        }
+        // Загружает записи журнала с текущими настройками фильтра.
+        private void LoadEventLog()
+        {
             string logName = (_eventLogNameComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "System";
 
-            // Фильтр по типу записи; пункт "Все" оставляет filter = null.
             EventLogEntryType? filter = null;
             string filterTag = (_eventLogFilterComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
             if (filterTag == "Error") filter = EventLogEntryType.Error;
             else if (filterTag == "Warning") filter = EventLogEntryType.Warning;
             else if (filterTag == "Information") filter = EventLogEntryType.Information;
 
-            // Сколько записей читать; при некорректном вводе — 50 по умолчанию.
             int count = 50;
             int.TryParse(_eventLogCountTextBox.Text, out count);
             if (count <= 0) count = 50;
@@ -36,13 +47,6 @@ namespace OpsCoreControl
             Log.Add($"Загружено {entries.Count} записей из '{logName}'.", LogType.Info);
         }
 
-        // Показывает полный текст выбранной записи в панели деталей.
-        private void _eventLogListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_eventLogListBox.SelectedItem is EventLogEntryInfo entry)
-            {
-                _eventLogDetailTextBox.Text = entry.Message;
-            }
-        }
+
     }
 }

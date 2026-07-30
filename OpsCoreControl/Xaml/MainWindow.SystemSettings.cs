@@ -40,7 +40,7 @@ namespace OpsCoreControl
         {
             int minutes;
             if (!int.TryParse(_timeToScreenLockTimerTextBox.Text, out minutes)) { minutes = 10; }
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => Task.Run(() => _systemSettingsManager.SetScreenLockTimeout(minutes)));
+            _systemSettingsManager.SetScreenLockTimeout(minutes);
         }
 
         // Ставит яркость монитора (0-100); при некорректном вводе — 100.
@@ -48,7 +48,7 @@ namespace OpsCoreControl
         {
             uint brightness;
             if (!uint.TryParse(_setMonitorBrightnessTextBox.Text, out brightness)) { brightness = 100; }
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => Task.Run(() => _monitorController.Set(brightness)));
+            _monitorController.Set(brightness);
         }
 
         // Наполняет список дисков для выбора под файл подкачки.
@@ -86,8 +86,7 @@ namespace OpsCoreControl
                 return;
             }
 
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _fileSystemManager.SetPageFileSize(selectedDisk, minMB, maxMB));
+            await _fileSystemManager.SetPageFileSize(selectedDisk, minMB, maxMB);
 
             // Обновляем список после установки.
             await RefreshPageFileInfoAsync();
@@ -119,8 +118,7 @@ namespace OpsCoreControl
                 return;
             }
 
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _fileSystemManager.ClearPageFile(selectedDisk));
+            await _fileSystemManager.ClearPageFile(selectedDisk);
 
             await RefreshPageFileInfoAsync();
         }
@@ -135,8 +133,7 @@ namespace OpsCoreControl
                 return;
             }
 
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender,
-                () => _fileSystemManager.SetPageFileAuto(selectedDisk));
+            await _fileSystemManager.SetPageFileAuto(selectedDisk);
 
             await RefreshPageFileInfoAsync();
         }
