@@ -5,11 +5,16 @@ using System.Windows;
 using System.Windows.Controls;
 using static OpsCoreControl.Log;
 
+// Часть главного окна: обработка вкладки Network —
+// сетевые команды (диагностика, ipconfig, Wi-Fi, адаптеры) и сброс сети.
+// Вывод команд идёт в потоковую консоль через ConsoleHelper.RunStreaming.
 namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
         // ── Диагностика (нужен адрес из поля) ──
+
+        // DNS-запрос: имя ↔ IP.
         private void _nslookupButton_Click(object sender, RoutedEventArgs e)
         {
             string host = _ipAdressTextBox.Text.Trim();
@@ -17,6 +22,7 @@ namespace OpsCoreControl
             ConsoleHelper.RunStreaming("nslookup", host);
         }
 
+        // Непрерывный пинг (останавливается кнопкой stop output).
         private void _pingContinuousButton_Click(object sender, RoutedEventArgs e)
         {
             string host = _ipAdressTextBox.Text.Trim();
@@ -25,6 +31,7 @@ namespace OpsCoreControl
         }
 
         // ── IP-конфигурация ──
+
         private void _ipReleaseButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.RunStreaming("ipconfig", "/release");
@@ -41,6 +48,7 @@ namespace OpsCoreControl
         }
 
         // ── Состояние сети ──
+
         private void _arpButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.RunStreaming("arp", "-a");
@@ -57,6 +65,7 @@ namespace OpsCoreControl
         }
 
         // ── Wi-Fi ──
+
         private void _wlanInterfacesButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.RunStreaming("netsh", "wlan show interfaces");
@@ -73,44 +82,52 @@ namespace OpsCoreControl
         }
 
         // ── Адаптеры ──
+
         private void _showNetInterfacesButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.RunStreaming("netsh", "interface show interface");
         }
-        private async void _clearNonRedeemablePool_Click(object sender, RoutedEventArgs e)
+
+        // Сброс сети (winsock / IP / DNS) — выполняет менеджер, кнопка красится по итогу.
+        private async void _ResetNetwork_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _networkManager.ClearNonPagedPool());
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _networkManager.ResetNetwork());
         }
+
+        // Полная информация по IP (ipconfig /all).
         private void _showIpconfigButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.RunStreaming("ipconfig", "/all");
         }
 
+        // Останавливает текущую потоковую команду.
         private void _stopOutputButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.StopStreaming();
         }
 
+        // Пинг адреса из поля (запускаем ping напрямую, не через cmd /c).
         private void _startPingButton_Click(object sender, RoutedEventArgs e)
         {
-
-            ConsoleHelper.RunStreaming("ping", $"{_ipAdressTextBox.Text} -t");   // не "cmd /c ping", а сразу ping
+            ConsoleHelper.RunStreaming("ping", $"{_ipAdressTextBox.Text} -t");
         }
 
+        // Трассировка маршрута до адреса из поля.
         private void _startTrecertButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleHelper.RunStreaming("tracert", _ipAdressTextBox.Text);
         }
 
+        // Очищает консоль вывода.
         private void _clearOutputNetworkConsoleTextBox_Click(object sender, RoutedEventArgs e)
         {
             _outputNetworkConsoleTextBox.Clear();
         }
 
-        private void _clearipAdressTextBoxButton_Click(object sender, RoutedEventArgs e)
+        // Очищает поле с адресом.
+        private void _clearIpAddressTextBoxButton_Click(object sender, RoutedEventArgs e)
         {
             _ipAdressTextBox.Clear();
         }
-
     }
 }

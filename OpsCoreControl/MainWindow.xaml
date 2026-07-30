@@ -87,7 +87,7 @@
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Left">
                         <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click"/>
-                        <Button x:Name="_cleadTempFolderButton" Content="Clean Temp" Click="_cleadTempFolderButton_Click"/>
+                        <Button x:Name="_cleadTempFolderButton" Content="Clean Temp" Click="_cleanTempFolderButton_Click"/>
                     </StackPanel>
                     <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
                         <Button x:Name="_openNetworkPathButton" Content="Open and create folder newtork" Click="_openNetworkPathButton_Click"/>
@@ -99,7 +99,7 @@
                     <Grid VerticalAlignment="Bottom" HorizontalAlignment="Right" Height="300" Width="400">
                         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
                             <Button x:Name="_mapLogicalDiskButton" Content="Подключить диск" Click="_mapLogicalDiskButton_Click"/>
-                            <Button x:Name="_deleteCurrentLogicaldiskButton" Content="delete disk" Click="_deleteCurrentLogicaldiskButton_Click"/>
+                            <Button x:Name="_deleteCurrentLogicaldiskButton" Content="delete disk" Click="_deleteCurrentLogicalDiskButton_Click"/>
                             <Button x:Name="_setNewNameLogicalDiskButton" Content="set new name for cuurent" Click="_setNewNameLogicalDiskButton_Click"/>
                             <Label Content="Name new logical disk"/>
                             <TextBox x:Name="_nameForOldLogicalDiskTextBox" Width="150"/>
@@ -157,7 +157,7 @@
                         <!-- Существующее содержимое (без изменений) -->
                         <Grid Grid.Row="1">
                             <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                                <Button x:Name="_clearNonRedeemablePoolButton" Content="Сброс сети" Click="_clearNonRedeemablePool_Click"/>
+                                <Button x:Name="_ResetNetworkButton" Content="Сброс сети" Click="_ResetNetwork_Click"/>
                             </StackPanel>
                             <Grid Width="600" Height="400" VerticalAlignment="Bottom" HorizontalAlignment="Right">
                                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
@@ -166,7 +166,7 @@
                                     <Button x:Name="_stopOutputButton" Content="stop output" Click="_stopOutputButton_Click"/>
                                     <Label Content="ip adress"/>
                                     <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8"/>
-                                    <Button x:Name="_clearipAdressTextBoxButton" Content="очистить поле" Click="_clearipAdressTextBoxButton_Click"/>
+                                    <Button x:Name="_clearipAddressTextBoxButton" Content="очистить поле" Click="_clearIpAddressTextBoxButton_Click"/>
                                 </StackPanel>
                                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
                                     <Button x:Name="_showIpconfigButton" Content="ipconfig /all" Click="_showIpconfigButton_Click"/>
@@ -194,8 +194,8 @@
 
                         <StackPanel Grid.Column="0" HorizontalAlignment="Left">
                             <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click"/>
-                            <Button x:Name="_tamplateButtonDesktopDirectroy" Content="Рабочий стол" Click="_tamplateButtonDesktopDirectroy_Click"/>
-                            <Button x:Name="_tamplateButtonDownloadDirectory" Content="Загрузки" Click="_tamplateButtonDownloadDirectory_Click"/>
+                            <Button x:Name="_templateButtonDesktopDirectroy" Content="Рабочий стол" Click="_templateButtonDesktopDirectroy_Click"/>
+                            <Button x:Name="_templateButtonDownloadDirectory" Content="Загрузки" Click="_templateButtonDownloadDirectory_Click"/>
                             <Label Content="Укажите директорию для сохранения"/>
                             <TextBox x:Name="_downloadDirectoryTextBox"/>
                         </StackPanel>
@@ -257,8 +257,8 @@
                                 <TextBox x:Name="_maximumVirtualRamTextBox" Width="100" HorizontalAlignment="Right"/>
                             </StackPanel>
                         </Grid>
-                        <Button x:Name="_setVirtualRamFindDisks" Content="Find disks" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="_setVirtualRamFindDisks_Click"/>
-                        <ListBox x:Name="_setVirualRamSelectedDiskListBox" Width="200" Height="50" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                            <Button x:Name="_setVirtualRamFindDisks" Content="Find disks" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="_setVirtualRamFindDisks_Click"/>
+                            <ListBox x:Name="_setVirtualRamSelectedDiskListBox" Width="200" Height="50" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                     </Grid>
                 </Grid>
             </TabItem>

@@ -4,8 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using static OpsCoreControl.Log;
 
+// Класс для работы с процессами: список запущенных процессов и завершение процесса по PID.
 namespace OpsCoreControl.WorkingСlasses
 {
+    // Модель процесса для списка: PID, имя, занятая память.
     public class ProcessInfo
     {
         public int Pid { get; set; }
@@ -16,15 +18,17 @@ namespace OpsCoreControl.WorkingСlasses
 
     internal class ProcessManager
     {
+        // Возвращает список процессов, отсортированный по имени.
         public List<ProcessInfo> GetProcesses()
         {
             var result = new List<ProcessInfo>();
             foreach (Process p in Process.GetProcesses())
             {
+                // Некоторые системные процессы не дают прочитать имя или память — пропускаем.
                 try
                 {
                     long memMb = 0;
-                    try { memMb = p.WorkingSet64 / (1024 * 1024); } catch { }
+                    try { memMb = p.WorkingSet64 / (1024 * 1024); } catch { } // память может быть недоступна
                     result.Add(new ProcessInfo { Pid = p.Id, Name = p.ProcessName, MemoryMb = memMb });
                 }
                 catch { }
@@ -33,8 +37,10 @@ namespace OpsCoreControl.WorkingСlasses
             return result.OrderBy(x => x.Name).ToList();
         }
 
+        // Завершает процесс по PID.
         public bool KillProcess(int pid)
         {
+            Log.Add($"Завершаем процесс PID {pid}...", LogType.Info);
             try
             {
                 using (Process p = Process.GetProcessById(pid))

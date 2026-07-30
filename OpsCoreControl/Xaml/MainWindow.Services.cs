@@ -8,6 +8,9 @@ using System.Windows.Input;
 using static OpsCoreControl.Log;
 using static OpsCoreControl.ServiceManager;
 
+// Часть главного окна: обработка вкладки Services —
+// управление службами (старт/стоп/рестарт/тип запуска), перезагрузка и выключение ПК,
+// запуск оснасток и процессов, копирование выбранных строк лога.
 namespace OpsCoreControl
 {
     public partial class MainWindow : Window
@@ -21,6 +24,7 @@ namespace OpsCoreControl
             Log.Add($"Служб загружено: {_allServices.Count}", LogType.Info);
         }
 
+        // Фильтрует список служб при вводе.
         private void _searchServiceTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             FilterServices();
@@ -41,6 +45,7 @@ namespace OpsCoreControl
             }
         }
 
+        // Возвращает выбранную службу или null (с подсказкой в лог).
         private ServiceInfo SelectedService()
         {
             if (_servicesListBox.SelectedItem is ServiceInfo svc) return svc;
@@ -72,6 +77,7 @@ namespace OpsCoreControl
             _refreshServicesButton_Click(sender, e);
         }
 
+        // Меняет тип запуска выбранной службы (Automatic / Manual / Disabled).
         private void _setStartupTypeButton_Click(object sender, RoutedEventArgs e)
         {
             ServiceInfo svc = SelectedService();
@@ -84,30 +90,43 @@ namespace OpsCoreControl
             }
         }
 
+        // Перезапуск службы печати.
         private async void _restartPrintSpoolerButton_Click(object sender, RoutedEventArgs e)
         {
             await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.RebootPrintSpooler("Spooler"));
         }
+
+        // Перезагрузка ПК (с подтверждением).
         private async void _rebootPC_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.rebootPC());
+            MessageBoxResult confirm = MessageBox.Show("Перезагрузить компьютер сейчас?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.RebootPC());
         }
+
+        // Выключение ПК (с подтверждением).
         private async void _shutdownPC_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.shutdownPC());
+            MessageBoxResult confirm = MessageBox.Show("Выключить компьютер сейчас? Несохранённые данные будут потеряны.", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _serviceManager.ShutdownPC());
         }
+
+        // Кладёт имя выбранной оснастки в поле ввода.
         private void _startCustomProcessSelectItemButton_Click(object sender, RoutedEventArgs e)
         {
             if (_startCustomProcessSelectItemListBox.SelectedItem is SystemTool tool)
                 _startCustomProcessTextBox.Text = tool.Name;
         }
 
+        // Двойной клик по оснастке запускает её сразу.
         private void _startCustomProcessSelectItemListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (_startCustomProcessSelectItemListBox.SelectedItem is SystemTool tool)
-                _serviceManager.startCustomProcess(tool.Name);
+                _serviceManager.StartCustomProcess(tool.Name);
         }
 
+        // Копирует выбранные строки лога (контекстное меню чата).
         private void CopySelected_Click(object sender, RoutedEventArgs e)
         {
             if (_mainChatListBox.SelectedItems.Count == 0) return;
@@ -119,9 +138,10 @@ namespace OpsCoreControl
             Clipboard.SetText(string.Join(Environment.NewLine, lines));
         }
 
+        // Запускает процесс из поля ввода.
         private async void _startCustomProcessButton_Click(object sender, RoutedEventArgs e)
         {
-            await _serviceManager.startCustomProcess(_startCustomProcessTextBox.Text);
+            await _serviceManager.StartCustomProcess(_startCustomProcessTextBox.Text);
         }
     }
 }

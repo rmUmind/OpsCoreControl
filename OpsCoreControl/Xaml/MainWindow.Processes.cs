@@ -5,12 +5,15 @@ using System.Windows;
 using System.Windows.Controls;
 using static OpsCoreControl.Log;
 
+// Часть главного окна: обработка вкладки Processes —
+// список процессов с поиском и завершение выбранного процесса.
 namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
         private List<ProcessInfo> _allProcesses = new List<ProcessInfo>();
 
+        // Перечитывает процессы и применяет текущий фильтр.
         private void RefreshProcesses()
         {
             _allProcesses = _processManager.GetProcesses();
@@ -23,6 +26,7 @@ namespace OpsCoreControl
             Log.Add($"Процессов: {_allProcesses.Count}", LogType.Info);
         }
 
+        // Фильтрует список при вводе (по имени или PID).
         private void _searchProcessTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             FilterProcesses();
@@ -43,6 +47,7 @@ namespace OpsCoreControl
             }
         }
 
+        // Завершает выбранный процесс (с подтверждением).
         private void _killProcessButton_Click(object sender, RoutedEventArgs e)
         {
             if (!(_processesListBox.SelectedItem is ProcessInfo proc))

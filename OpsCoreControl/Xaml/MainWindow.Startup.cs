@@ -5,12 +5,15 @@ using System.Windows;
 using System.Windows.Controls;
 using static OpsCoreControl.Log;
 
+// Часть главного окна: обработка вкладки Startup —
+// список программ автозагрузки с поиском, включение и выключение.
 namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
         private List<StartupProgram> _allStartup = new List<StartupProgram>();
 
+        // Перечитывает автозагрузку и применяет текущий фильтр.
         private void RefreshStartup()
         {
             _allStartup = _startupManager.GetStartupPrograms();
@@ -23,6 +26,7 @@ namespace OpsCoreControl
             Log.Add($"Автозагрузок: {_allStartup.Count}", LogType.Info);
         }
 
+        // Фильтрует список автозагрузки при вводе.
         private void _searchStartupTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             FilterStartup();
@@ -42,6 +46,7 @@ namespace OpsCoreControl
         private void _enableStartupButton_Click(object sender, RoutedEventArgs e) => SetStartupState(true);
         private void _disableStartupButton_Click(object sender, RoutedEventArgs e) => SetStartupState(false);
 
+        // Включает или выключает выбранную программу в автозагрузке.
         private void SetStartupState(bool enabled)
         {
             if (!(_startupListBox.SelectedItem is StartupProgram program))

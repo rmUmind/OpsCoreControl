@@ -12,8 +12,12 @@ using System.Windows.Media;
 using static OpsCoreControl.Log;
 using System.Linq;
 
+// Класс для управления системой и службами:
+// перезагрузка/выключение ПК, запуск процессов, оснастки (SystemTool),
+// управление службами (старт/стоп/рестарт/тип запуска) и их список.
 namespace OpsCoreControl
 {
+    // Модель системной оснастки: имя для запуска и описание для списка.
     public class SystemTool
     {
         public string Name { get; set; }        // что запускать: "devmgmt.msc"
@@ -23,20 +27,22 @@ namespace OpsCoreControl
 
     internal class ServiceManager
     {
-
-        public async Task<bool> rebootPC()
+        // Перезагружает компьютер (shutdown /r, без задержки, принудительно).
+        public async Task<bool> RebootPC()
         {
-            var psi = ConsoleHelper.CmdConsoleCommand("$\"/c shutdown /r /t 0 /f\"");
-            return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет перезагружен.", "Не удалось перезагрузить компьютер");
+            var psi = ConsoleHelper.CmdConsoleCommand("/c shutdown /r /t 0 /f");
+            return await ConsoleHelper.LookForProcessEnd(psi, "Компьютер будет перезагружен.", "Не удалось перезагрузить компьютер");
         }
 
-        public async Task<bool> shutdownPC()
+        // Выключает компьютер (shutdown /s, без задержки, принудительно).
+        public async Task<bool> ShutdownPC()
         {
-            var psi = ConsoleHelper.CmdConsoleCommand("$\"/c shutdown /s /t 0 /f\"");
-            return await ConsoleHelper.LookForProcessEnd(psi, "Комптютер будет выключен.", "Не удалось перезагрузить компьютер");
+            var psi = ConsoleHelper.CmdConsoleCommand("/c shutdown /s /t 0 /f");
+            return await ConsoleHelper.LookForProcessEnd(psi, "Компьютер будет выключен.", "Не удалось выключить компьютер");
         }
 
-        public Task<bool> startCustomProcess(string processName)
+        // Запускает процесс по имени (например, оснастку или программу).
+        public Task<bool> StartCustomProcess(string processName)
         {
             try
             {
@@ -61,6 +67,8 @@ namespace OpsCoreControl
                 return Task.FromResult(false);
             }
         }
+
+        // Модель службы для списка: имя, отображаемое имя, статус, тип запуска.
         public class ServiceInfo
         {
             public string ServiceName { get; set; }
@@ -69,6 +77,8 @@ namespace OpsCoreControl
             public string StartType { get; set; }
             public override string ToString() => $"{DisplayName}  [{ServiceName}]  —  {Status}  ({StartType})";
         }
+
+        // Перезапускает службу (используется для Print Spooler): стоп, если работает, затем старт.
         public async Task<bool> RebootPrintSpooler(string serviceName)
         {
             try
@@ -91,16 +101,18 @@ namespace OpsCoreControl
             }
             catch (Exception ex)
             {
-                Log.Add($"Исключение при перезапуске службы: {serviceName} - " + ex.Message, LogType.Error);
+                Log.Add($"Ошибка перезапуска службы {serviceName}: {ex.Message}", LogType.Error);
                 return false;
             }
         }
 
+        // Возвращает список служб, отсортированный по отображаемому имени.
         public List<ServiceInfo> GetServices()
         {
             var result = new List<ServiceInfo>();
             foreach (ServiceController sc in ServiceController.GetServices())
             {
+                // У некоторых служб тип запуска недоступен — оставляем "?".
                 string startType = "?";
                 try { startType = sc.StartType.ToString(); } catch { }
                 result.Add(new ServiceInfo
@@ -115,6 +127,7 @@ namespace OpsCoreControl
             return result.OrderBy(s => s.DisplayName).ToList();
         }
 
+        // Запускает службу.
         public bool StartService(string serviceName)
         {
             try
@@ -131,6 +144,7 @@ namespace OpsCoreControl
             catch (Exception ex) { Log.Add($"Ошибка запуска {serviceName}: {ex.Message}", LogType.Error); return false; }
         }
 
+        // Останавливает службу.
         public bool StopService(string serviceName)
         {
             try
@@ -147,13 +161,14 @@ namespace OpsCoreControl
             catch (Exception ex) { Log.Add($"Ошибка остановки {serviceName}: {ex.Message}", LogType.Error); return false; }
         }
 
+        // Перезапускает службу: остановка, затем запуск.
         public bool RestartService(string serviceName)
         {
             StopService(serviceName);
             return StartService(serviceName);
         }
 
-        // 2 = Automatic, 3 = Manual, 4 = Disabled
+        // Меняет тип запуска службы через реестр. 2 = Automatic, 3 = Manual, 4 = Disabled.
         public bool SetStartupType(string serviceName, int startType)
         {
             try

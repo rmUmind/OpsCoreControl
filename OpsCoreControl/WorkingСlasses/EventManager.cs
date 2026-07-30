@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using static OpsCoreControl.Log;
 
-namespace OpsCoreControl.WorkingСlasses   // ← тот же namespace, что у остальных менеджеров
+// Классы для работы с журналом событий Windows (System, Application):
+// модель записи и чтение последних записей с фильтром по типу.
+namespace OpsCoreControl.WorkingСlasses
 {
+    // Модель одной записи журнала событий.
     public class EventLogEntryInfo
     {
         public string Time { get; set; }
         public string Type { get; set; }
         public string Source { get; set; }
         public string Message { get; set; }
+
+        // Для списка обрезаем длинное сообщение; полный текст остаётся в Message.
         public override string ToString()
         {
             string msg = Message ?? "";
@@ -19,8 +24,10 @@ namespace OpsCoreControl.WorkingСlasses   // ← тот же namespace, что 
         }
     }
 
-    internal class EventLogManager   // было EventManager
+    // Класс для чтения журнала событий Windows.
+    internal class EventLogManager
     {
+        // Возвращает последние count записей журнала logName, можно отфильтровать по типу.
         public List<EventLogEntryInfo> GetRecentEventLog(string logName, int count, EventLogEntryType? filterType)
         {
             var result = new List<EventLogEntryInfo>();
@@ -30,10 +37,13 @@ namespace OpsCoreControl.WorkingСlasses   // ← тот же namespace, что 
                 {
                     int total = log.Entries.Count;
                     int added = 0;
+                    // Идём с конца — свежие записи первыми, останавливаемся, когда наберём count.
                     for (int i = total - 1; i >= 0 && added < count; i--)
                     {
                         EventLogEntry entry = log.Entries[i];
+                        // Если задан фильтр — пропускаем записи не того типа.
                         if (filterType.HasValue && entry.EntryType != filterType.Value) continue;
+
                         result.Add(new EventLogEntryInfo
                         {
                             Time = entry.TimeGenerated.ToString("yyyy-MM-dd HH:mm:ss"),

@@ -6,15 +6,14 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
 using static OpsCoreControl.Log;
 
+// Класс для работы с программами: список установленных (из реестра), удаление,
+// запуск встроенных установщиков и скачивание файлов.
 namespace OpsCoreControl.WorkingСlasses
 {
+    // Модель установленной программы.
     public class InstalledProgram
     {
         public string Name { get; set; }
@@ -24,12 +23,9 @@ namespace OpsCoreControl.WorkingСlasses
         public override string ToString() => $"{Name}  {Version}  —  {Publisher}";
     }
 
-
-
     internal class SoftwareManager
     {
-
-      
+        // Читает установленные программы из реестра (HKLM, WOW6432Node, HKCU) и убирает дубли.
         public List<InstalledProgram> GetInstalledPrograms()
         {
             var result = new List<InstalledProgram>();
@@ -45,6 +41,7 @@ namespace OpsCoreControl.WorkingСlasses
                 .ToList();
         }
 
+        // Читает программы из одного раздела реестра.
         private void CollectFromRegistry(RegistryKey root, string path, List<InstalledProgram> list)
         {
             try
@@ -58,7 +55,7 @@ namespace OpsCoreControl.WorkingСlasses
                         {
                             if (sub == null) continue;
                             string name = sub.GetValue("DisplayName")?.ToString();
-                            if (string.IsNullOrWhiteSpace(name)) continue;
+                            if (string.IsNullOrWhiteSpace(name)) continue; // служебные записи без имени пропускаем
                             list.Add(new InstalledProgram
                             {
                                 Name = name,
@@ -70,11 +67,13 @@ namespace OpsCoreControl.WorkingСlasses
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось прочитать раздел реестра {path}: {ex.Message}", LogType.Error);
+            }
         }
 
-
-
+        // Запускает удаление программы через её UninstallString.
         public bool UninstallProgram(InstalledProgram program)
         {
             if (string.IsNullOrWhiteSpace(program.UninstallString))
@@ -106,8 +105,7 @@ namespace OpsCoreControl.WorkingСlasses
             }
         }
 
-
-
+        // Достаёт встроенный установщик из ресурсов сборки и запускает его (с UAC).
         public async Task<bool> RunEmbeddedInstallerAsync(string resourceName, string fileName)
         {
             if (!IsEmbeddedResourceAvailable(resourceName))
@@ -119,7 +117,7 @@ namespace OpsCoreControl.WorkingСlasses
             string tempFilePath = null;
             try
             {
-                // 1. Получаем поток ресурса из сборки
+                // 1. Получаем поток ресурса из сборки.
                 var assembly = Assembly.GetExecutingAssembly();
                 using (var resourceStream = assembly.GetManifestResourceStream(resourceName))
                 {
@@ -129,7 +127,7 @@ namespace OpsCoreControl.WorkingСlasses
                         return false;
                     }
 
-                    // 2. Сохраняем во временный файл
+                    // 2. Сохраняем во временный файл.
                     tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
                     Log.Add($"Извлечение ресурса во временный файл: {tempFilePath}", LogType.Info);
 
@@ -141,7 +139,7 @@ namespace OpsCoreControl.WorkingСlasses
 
                 Log.Add($"Ресурс успешно извлечён: {tempFilePath}", LogType.Success);
 
-                // 3. Запускаем установщик с правами администратора
+                // 3. Запускаем установщик с правами администратора.
                 var psi = new ProcessStartInfo
                 {
                     FileName = tempFilePath,
@@ -161,7 +159,7 @@ namespace OpsCoreControl.WorkingСlasses
                         return false;
                     }
 
-                    // Дожидаемся завершения установки в фоновом потоке, чтобы не вешать UI
+                    // Ждём завершения в фоновом потоке, чтобы не вешать UI.
                     await Task.Run(() => process.WaitForExit());
 
                     if (process.ExitCode == 0)
@@ -181,9 +179,9 @@ namespace OpsCoreControl.WorkingСlasses
                 Log.Add($"Ошибка при запуске установщика: {ex.Message}", LogType.Error);
                 return false;
             }
-            finally
-            { };
         }
+
+        // Скачивает файл по URL в указанную папку.
         public async Task<bool> DownloadFileAsync(string url, string directory, string fileName = null)
         {
             try
@@ -197,18 +195,14 @@ namespace OpsCoreControl.WorkingСlasses
 
                 using (var client = new HttpClient())
                 {
-
                     HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-
                     response.EnsureSuccessStatusCode();
 
-                    // Открываем поток для чтения данных из интернета
+                    // Читаем из сети и пишем в файл потоком, не грузя всё в память.
                     using (var networkStream = await response.Content.ReadAsStreamAsync())
                     {
-                        // Создаём файл на диске и открываем поток для записи
                         using (var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
                         {
-                            // Копируем все байты из интернета в файл
                             await networkStream.CopyToAsync(fileStream);
                         }
                     }
@@ -219,10 +213,12 @@ namespace OpsCoreControl.WorkingСlasses
             }
             catch (Exception ex)
             {
-                Log.Add($"Исключение при скачивании файла: {ex.Message}", LogType.Error);
+                Log.Add($"Ошибка при скачивании файла: {ex.Message}", LogType.Error);
                 return false;
             }
         }
+
+        // Проверяет, есть ли встроенный ресурс в сборке.
         public bool IsEmbeddedResourceAvailable(string resourceName)
         {
             var assembly = Assembly.GetExecutingAssembly();

@@ -12,7 +12,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using static OpsCoreControl.Log;
 
+// Класс дашборда: раз в секунду собирает данные о системе (CPU, RAM, диски, сеть, USB, батарея)
+// и шлёт снапшот подписчикам через событие Updated. Тяжёлые запросы (WMI, netsh, веб)
+// выполняет реже — раз в 5/10/60 секунд, чтобы не грузить систему.
 namespace OpsCoreControl
 {
     internal class DashBoard : IDisposable
@@ -21,6 +25,7 @@ namespace OpsCoreControl
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
+        // Счётчики производительности для быстрых метрик (CPU, RAM, диск).
         private readonly PerformanceCounter _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
         private readonly PerformanceCounter _ramAvailableCounter = new PerformanceCounter("Memory", "Available MBytes");
         private readonly PerformanceCounter _vramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -31,7 +36,7 @@ namespace OpsCoreControl
         private DateTime? _bootTime;
         private int _tick;
 
-        // кэш тяжёлых данных (обновляется не каждый тик)
+        // Кэш тяжёлых данных, обновляется не каждый тик.
         private WifiSnapshot _wifi = new WifiSnapshot();
         private List<AdapterSnapshot> _adapters = new List<AdapterSnapshot>();
         private List<UsbSnapshot> _usb = new List<UsbSnapshot>();
@@ -41,12 +46,14 @@ namespace OpsCoreControl
 
         public event Action<DashboardData> Updated;
 
+        // Служебные данные диска: UNC-путь и тип (берутся из WMI).
         private class DiskMeta
         {
             public string Unc;
             public string Type;
         }
 
+        // Прогревает счётчики и запускает цикл сбора данных.
         public DashBoard()
         {
             _cpuCounter.NextValue();          // первый замер счётчиков даёт 0 — прогреваем
@@ -55,6 +62,7 @@ namespace OpsCoreControl
             _ = Loop();
         }
 
+        // Возвращает общий объём RAM в байтах через WMI.
         private static ulong GetTotalPhysicalMemoryBytes()
         {
             using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
@@ -63,6 +71,7 @@ namespace OpsCoreControl
             }
         }
 
+        // Фоновый цикл: собирает снапшот и уведомляет подписчиков, пока не отменят.
         private async Task Loop()
         {
             while (!_cts.IsCancellationRequested)
@@ -73,13 +82,17 @@ namespace OpsCoreControl
                     var dispatcher = Application.Current?.Dispatcher;
                     dispatcher?.BeginInvoke(new Action(() => Updated?.Invoke(data)));
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Add($"Ошибка обновления дашборда: {ex.Message}", LogType.Error);
+                }
 
                 try { await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds), _cts.Token); }
                 catch (TaskCanceledException) { break; }
             }
         }
 
+        // Собирает полный снапшот. Счётчики — каждый тик, тяжёлые запросы — по счётчику тиков.
         private DashboardData Collect()
         {
             _tick++;
@@ -135,6 +148,7 @@ namespace OpsCoreControl
             return data;
         }
 
+        // Список логических дисков с типом и UNC для сетевых.
         private List<DiskSnapshot> CollectDisks()
         {
             var result = new List<DiskSnapshot>();
@@ -155,6 +169,7 @@ namespace OpsCoreControl
 
                 if (drive.IsReady)
                 {
+                    // Диск мог отвалиться во время чтения — пропускаем молча, чтобы не спамить.
                     try
                     {
                         snap.Label = drive.VolumeLabel;
@@ -169,6 +184,7 @@ namespace OpsCoreControl
             return result;
         }
 
+        // Метаданные дисков из WMI: тип и UNC-путь для сетевых.
         private Dictionary<string, DiskMeta> CollectDiskMeta()
         {
             var map = new Dictionary<string, DiskMeta>(StringComparer.OrdinalIgnoreCase);
@@ -188,10 +204,14 @@ namespace OpsCoreControl
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить метаданные дисков: {ex.Message}", LogType.Error);
+            }
             return map;
         }
 
+        // Данные WiFi из netsh: статус, SSID, уровень сигнала.
         private WifiSnapshot CollectWifi()
         {
             var snap = new WifiSnapshot { Connected = false, Ssid = "—", SignalPercent = 0 };
@@ -200,6 +220,7 @@ namespace OpsCoreControl
                 string output = RunAndCapture("netsh", "wlan show interfaces");
                 if (string.IsNullOrWhiteSpace(output)) return snap;
 
+                // Разбираем вывод построчно: строки вида "Ключ : значение".
                 foreach (string rawLine in output.Split('\n'))
                 {
                     string line = rawLine.Trim();
@@ -224,10 +245,14 @@ namespace OpsCoreControl
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить данные WiFi: {ex.Message}", LogType.Error);
+            }
             return snap;
         }
 
+        // Сетевые адаптеры: статус, IP, скорость. Loopback и туннели пропускаем.
         private List<AdapterSnapshot> CollectAdapters()
         {
             var result = new List<AdapterSnapshot>();
@@ -262,10 +287,14 @@ namespace OpsCoreControl
                     });
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить список сетевых адаптеров: {ex.Message}", LogType.Error);
+            }
             return result;
         }
 
+        // USB-устройства из WMI.
         private List<UsbSnapshot> CollectUsb()
         {
             var result = new List<UsbSnapshot>();
@@ -284,10 +313,14 @@ namespace OpsCoreControl
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить USB-устройства: {ex.Message}", LogType.Error);
+            }
             return result;
         }
 
+        // Заряд батареи (для ноутбуков); на ПК без батареи вернёт "нет".
         private string CollectBattery()
         {
             try
@@ -303,10 +336,14 @@ namespace OpsCoreControl
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить статус батареи: {ex.Message}", LogType.Error);
+            }
             return "нет";
         }
 
+        // Публичный IP через внешний сервис.
         private string CollectPublicIp()
         {
             try
@@ -316,9 +353,14 @@ namespace OpsCoreControl
                     return client.DownloadString("https://api.ipify.org").Trim();
                 }
             }
-            catch { return "—"; }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить публичный IP: {ex.Message}", LogType.Error);
+                return "—";
+            }
         }
 
+        // Время работы системы с последней загрузки (кэшируем время загрузки).
         private string GetUptime()
         {
             if (_bootTime == null)
@@ -333,12 +375,17 @@ namespace OpsCoreControl
                         }
                     }
                 }
-                catch { _bootTime = DateTime.Now; }
+                catch (Exception ex)
+                {
+                    _bootTime = DateTime.Now;
+                    Log.Add($"Не удалось получить время загрузки системы: {ex.Message}", LogType.Error);
+                }
             }
             TimeSpan span = DateTime.Now - _bootTime.Value;
             return $"{(int)span.TotalDays}д {span.Hours}ч {span.Minutes}м";
         }
 
+        // Запускает команду и возвращает её вывод. Рассчитано на быстрые команды (netsh).
         private string RunAndCapture(string fileName, string args)
         {
             var psi = new ProcessStartInfo
@@ -358,6 +405,7 @@ namespace OpsCoreControl
             }
         }
 
+        // Перевод кода типа диска из WMI в понятное имя.
         private string MapWmiDriveType(string code)
         {
             switch (code)
@@ -371,6 +419,7 @@ namespace OpsCoreControl
             }
         }
 
+        // Перевод типа диска из DriveInfo в понятное имя.
         private string MapDriveInfoType(DriveType t)
         {
             switch (t)
@@ -384,6 +433,7 @@ namespace OpsCoreControl
             }
         }
 
+        // Останавливает цикл сбора и освобождает счётчики.
         public void Dispose()
         {
             _cts.Cancel();
@@ -392,6 +442,7 @@ namespace OpsCoreControl
             _vramCounter.Dispose();
             _diskReadCounter.Dispose();
             _diskWriteCounter.Dispose();
+            Log.Add("Дашборд остановлен.", LogType.Info);
         }
     }
 }
