@@ -91,7 +91,7 @@ namespace OpsCoreControl
         // Сброс сети (winsock / IP / DNS) — выполняет менеджер, кнопка красится по итогу.
         private async void _ResetNetwork_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _networkManager.ResetNetwork());
+            await _networkManager.ResetNetwork();
         }
 
         // Полная информация по IP (ipconfig /all).

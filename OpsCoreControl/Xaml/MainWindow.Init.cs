@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using static OpsCoreControl.Log;
 
 // Главная часть окна: создание менеджеров, подписка на дашборд и лог,
@@ -15,6 +17,7 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
+
         // Менеджеры — в них вынесена вся бизнес-логика.
         private ProcessManager _processManager;
         private StartupManager _startupManager;
@@ -28,10 +31,73 @@ namespace OpsCoreControl
         private SystemSettingsManager _systemSettingsManager;
         private PhysicalMonitorBrightnessController _monitorController;
 
+        // Флажки однократной автозагрузки данных вкладок.
+        private bool _eventLogLoaded;
+        private bool _processesLoaded;
+        private bool _startupLoaded;
+        private bool _hostsLoaded;
+        private bool _servicesLoaded;
+
         // Анти-мерцание: перерисовываем списки только при изменении.
         private List<string> _lastDisks = new List<string>();
         private List<string> _lastAdapters = new List<string>();
         private List<string> _lastUsb = new List<string>();
+
+        // Перекрашивает заголовок и рамку окна под тему через DWM.
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+        // Шлёт окну системное сообщение (нужно, чтобы имитировать смену фокуса для заголовка).
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        // Принудительная перерисовка non-client области (рамки) без смены размера и фокуса.
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
+            int x, int y, int cx, int cy, uint uFlags);
+
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20; // тёмный заголовок и кнопки (Win10 1809+ / Win11)
+        private const int DWMWA_BORDER_COLOR = 34;            // цвет рамки (Win11 build 22000+)
+        private const int DWMWA_CAPTION_COLOR = 35;           // цвет заголовка (Win11 build 22000+)
+        private const uint WM_NCACTIVATE = 0x0086;            // сообщение «изменилось активное состояние заголовка»
+
+        // Флаги SetWindowPos: не двигать/не менять размер/не трогать z-order/не активировать, но пересчитать рамку.
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_NOACTIVATE = 0x0010;
+        private const uint SWP_FRAMECHANGED = 0x0020;
+
+        private void ApplyWindowChromeTheme(bool dark)
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            if (hwnd == IntPtr.Zero)
+            {
+                Log.Add("DWM: handle окна ещё не создан.", LogType.Debug);
+                return;
+            }
+
+            // Тёмный non-client area: красит заголовок и рамку в системный тёмный/светлый.
+            int useDark = dark ? 1 : 0;
+            int hrDark = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useDark, sizeof(int));
+
+            // Точный цвет заголовка и рамки (только Win11 22000+; на старых билдах вернёт E_INVALIDARG — это нормально).
+            int color = dark ? 0x001E1E1E : 0x00EFEFEF; // COLORREF 0x00BBGGRR
+            int hrCaption = DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref color, sizeof(int));
+            int hrBorder = DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref color, sizeof(int));
+
+            // Пересчитываем рамку.
+            SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
+            // Заставляем DWM пересчитать палитру заголовка прямо сейчас: имитируем уход и возврат фокуса.
+            // Без этого заголовок меняет цвет только когда пользователь реально кликнет в другое окно.
+            SendMessage(hwnd, WM_NCACTIVATE, IntPtr.Zero, IntPtr.Zero);   // «стало неактивным»
+            SendMessage(hwnd, WM_NCACTIVATE, new IntPtr(1), IntPtr.Zero); // «стало активным» — с новым цветом
+
+            Log.Add($"DWM тема={(dark ? "тёмная" : "светлая")}: dark={hrDark}, caption={hrCaption}, border={hrBorder}.", LogType.Debug);
+        }
 
         public MainWindow()
         {
@@ -65,6 +131,10 @@ namespace OpsCoreControl
             _processManager = new ProcessManager();
             _startupManager = new StartupManager();
             _hostsManager = new HostsManager();
+
+            // Красим заголовок/рамку после создания окна и после первой отрисовки.
+            this.SourceInitialized += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
+            this.ContentRendered += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
 
             // Список оснасток для быстрого запуска (вкладка Services).
             var tools = new List<SystemTool>
@@ -103,6 +173,39 @@ namespace OpsCoreControl
                 }
             };
             Log.LogDebug += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
+        }
+
+        // Подгружает данные при первом открытии вкладки (повторно не грузит).
+        private void _mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Событие приходит и от внутренних списков/комбобоксов — реагируем только на смену вкладки.
+            if (!(e.Source is TabControl)) return;
+
+            if (_mainTabControl.SelectedItem == _processesTabItem && !_processesLoaded)
+            {
+                RefreshProcesses();
+                _processesLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _servicesTabItem && !_servicesLoaded)
+            {
+                RefreshServices();
+                _servicesLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _startupTabItem && !_startupLoaded)
+            {
+                RefreshStartup();
+                _startupLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _eventLogTabItem && !_eventLogLoaded)
+            {
+                LoadEventLog();
+                _eventLogLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _hostsTabItem && !_hostsLoaded)
+            {
+                _hostsTextBox.Text = _hostsManager.ReadHosts();
+                _hostsLoaded = true;
+            }
         }
 
         // Отрисовывает дашборд из свежего снапшота (вызывается по событию Updated).

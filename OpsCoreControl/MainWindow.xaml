@@ -1,401 +1,506 @@
 ﻿<Window x:Class="OpsCoreControl.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpsCoreControl"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="720" Width="1100">
+        Title="OpsCoreControl" Height="740" Width="1080"
+        Background="{DynamicResource WindowBg}">
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="Инфо" Click="_showAbout_Click"/>
             <MenuItem Header="Bug Report" Click="_showBugReport_Click"/>
+            <MenuItem x:Name="_darkThemeMenuItem" Header="Тёмная тема" IsCheckable="True" Click="_toggleTheme_Click"/>
         </Menu>
+
         <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <TabControl Grid.Row="0" TabStripPlacement="Left">
-                <TabItem Header="Services">
-                    <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TabControl Grid.Row="0" TabStripPlacement="Left" x:Name="_mainTabControl" SelectionChanged="_mainTabControl_SelectionChanged">
+
+                <!-- ========== Службы ========== -->
+                <TabItem  x:Name="_servicesTabItem" Header="Службы">
+                    <Grid Margin="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top">
-                            <Button x:Name="_restartPrintSpoolerButton" Content="Reboot print spooler" Click="_restartPrintSpoolerButton_Click" Width="150" Height="50"/>
-                            <Button x:Name="_rebootPC" Content="Reboot" Click="_rebootPC_Click" Width="150" Height="50"/>
-                            <Button x:Name="_shutdownPC" Content="Shutdown" Click="_shutdownPC_Click" Width="150" Height="50"/>
-                            <Button x:Name="_startCustomProcessButton" Content="Start process" Click="_startCustomProcessButton_Click" Margin="0,10,0,0"/>
-                            <Label Content="введите имя процесса"/>
-                            <TextBox x:Name="_startCustomProcessTextBox" Height="20" Width="150"/>
-                            <Button x:Name="_startCustomProcessSelectItemButton" Content="Выбрать из списка" Click="_startCustomProcessSelectItemButton_Click"/>
-                            <ListBox x:Name="_startCustomProcessSelectItemListBox" Width="300" Height="120" MouseDoubleClick="_startCustomProcessSelectItemListBox_MouseDoubleClick"/>
+                        <StackPanel Grid.Column="0">
+                            <GroupBox Header="Система">
+                                <StackPanel>
+                                    <Button x:Name="_restartPrintSpoolerButton" Content="Перезапустить Print Spooler" Click="_restartPrintSpoolerButton_Click" Width="185"/>
+                                    <Button x:Name="_rebootPC" Content="Перезагрузка ПК" Click="_rebootPC_Click" Width="185"/>
+                                    <Button x:Name="_shutdownPC" Content="Выключение ПК" Click="_shutdownPC_Click" Width="185"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Запуск процесса">
+                                <StackPanel>
+                                    <TextBox x:Name="_startCustomProcessTextBox" Width="185"/>
+                                    <Button x:Name="_startCustomProcessButton" Content="Запустить" Click="_startCustomProcessButton_Click" Width="185"/>
+                                    <Button x:Name="_startCustomProcessSelectItemButton" Content="Выбрать из списка" Click="_startCustomProcessSelectItemButton_Click" Width="185"/>
+                                    <ListBox x:Name="_startCustomProcessSelectItemListBox" Width="185" Height="120"
+                                             MouseDoubleClick="_startCustomProcessSelectItemListBox_MouseDoubleClick"/>
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
 
-                        <Grid Grid.Column="1" Margin="8">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                <Button x:Name="_refreshServicesButton" Content="Обновить" Click="_refreshServicesButton_Click" Margin="2"/>
-                                <Button x:Name="_startServiceButton" Content="Старт" Click="_startServiceButton_Click" Margin="2"/>
-                                <Button x:Name="_stopServiceButton" Content="Стоп" Click="_stopServiceButton_Click" Margin="2"/>
-                                <Button x:Name="_restartServiceButton" Content="Рестарт" Click="_restartServiceButton_Click" Margin="2"/>
-                                <ComboBox x:Name="_startupTypeComboBox" Width="110" Margin="2" SelectedIndex="0">
-                                    <ComboBoxItem Content="Automatic" Tag="2"/>
-                                    <ComboBoxItem Content="Manual" Tag="3"/>
-                                    <ComboBoxItem Content="Disabled" Tag="4"/>
-                                </ComboBox>
-                                <Button x:Name="_setStartupTypeButton" Content="Тип запуска" Click="_setStartupTypeButton_Click" Margin="2"/>
-                            </StackPanel>
-                            <TextBox Grid.Row="1" x:Name="_searchServiceTextBox" TextChanged="_searchServiceTextBox_TextChanged" Margin="2"/>
-                            <ListBox Grid.Row="2" x:Name="_servicesListBox" Margin="2"/>
-                        </Grid>
+                        <GroupBox Grid.Column="1" Header="Управление службами">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <WrapPanel Grid.Row="0">
+                                    <Button x:Name="_refreshServicesButton" Content="Обновить" Click="_refreshServicesButton_Click"/>
+                                    <Button x:Name="_startServiceButton" Content="Старт" Click="_startServiceButton_Click"/>
+                                    <Button x:Name="_stopServiceButton" Content="Стоп" Click="_stopServiceButton_Click"/>
+                                    <Button x:Name="_restartServiceButton" Content="Рестарт" Click="_restartServiceButton_Click"/>
+                                    <ComboBox x:Name="_startupTypeComboBox" Width="110" SelectedIndex="0">
+                                        <ComboBoxItem Content="Automatic" Tag="2"/>
+                                        <ComboBoxItem Content="Manual" Tag="3"/>
+                                        <ComboBoxItem Content="Disabled" Tag="4"/>
+                                    </ComboBox>
+                                    <Button x:Name="_setStartupTypeButton" Content="Тип запуска" Click="_setStartupTypeButton_Click"/>
+                                </WrapPanel>
+                                <TextBox Grid.Row="1" x:Name="_searchServiceTextBox" TextChanged="_searchServiceTextBox_TextChanged"/>
+                                <ListBox Grid.Row="2" x:Name="_servicesListBox"/>
+                            </Grid>
+                        </GroupBox>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Profiles">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="0">
-                        <Button x:Name="_showUsersProfilesButton" Content="_showUsersProfiles" Click="_showUsersProfiles_ClickAsync" Width="150" Height="50"/>
-                        <Button x:Name="_deleteProfileButton" Content="Delete Profile" Click="_deleteProfile_Click" Width="150" Height="50"/>
-                    </StackPanel>
-                    <Grid Grid.Column="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Label x:Name="_userProfilesCountLabel" Grid.Row="0" Content="Count: " HorizontalAlignment="Right"/>
-                        <ListBox x:Name="_usersProfilesListBox" Grid.Row="1" Width="300" SelectionMode ="Multiple" SelectionChanged="_usersProfilesListBox_SelectionChanged" HorizontalAlignment="Right"/>
+
+                <!-- ========== Профили ========== -->
+                <TabItem Header="Профили">
+                    <Grid Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <GroupBox Grid.Column="0" Header="Профили пользователей">
+                            <StackPanel>
+                                <Button x:Name="_showUsersProfilesButton" Content="Показать профили" Click="_showUsersProfiles_ClickAsync" Width="170"/>
+                                <Button x:Name="_deleteProfileButton" Content="Удалить профиль" Click="_deleteProfile_Click" Width="170"/>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Grid.Column="1" Header="Список профилей">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Label x:Name="_userProfilesCountLabel" Grid.Row="0" Content="Выбрано: 0" HorizontalAlignment="Right"/>
+                                <ListBox x:Name="_usersProfilesListBox" Grid.Row="1" SelectionMode="Multiple"
+                                         SelectionChanged="_usersProfilesListBox_SelectionChanged"/>
+                            </Grid>
+                        </GroupBox>
                     </Grid>
-                </Grid>
-            </TabItem>
-            <TabItem Header="Folder's work">
-                <Grid>
-                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8">
-                            <Button x:Name="_checkSmartButton" Content="Проверить SMART" Click="_checkSmartButton_Click"/>
-                            <Label Content="Здоровье дисков:"/>
-                            <ListBox x:Name="_diskHealthListBox" Width="380" Height="120"/>
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Left">
-                        <Button x:Name="_cleanDownloadFolderButton" Content="_cleanDownloadFolder" Click="_cleanDownloadFolder_Click"/>
-                        <Button x:Name="_cleadTempFolderButton" Content="Clean Temp" Click="_cleanTempFolderButton_Click"/>
-                    </StackPanel>
-                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Button x:Name="_openNetworkPathButton" Content="Open and create folder newtork" Click="_openNetworkPathButton_Click"/>
-                        <Label Content="Введите адрес папки"/>
-                        <TextBox x:Name="_setNetworkPathTextBox"/>
-                        <Label Content="name of disk (optional)"/>
-                        <TextBox x:Name="_setNameForNewLogicalDiskTextBox"/>
-                    </StackPanel>
-                    <Grid VerticalAlignment="Bottom" HorizontalAlignment="Right" Height="300" Width="400">
-                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                            <Button x:Name="_mapLogicalDiskButton" Content="Подключить диск" Click="_mapLogicalDiskButton_Click"/>
-                            <Button x:Name="_deleteCurrentLogicaldiskButton" Content="delete disk" Click="_deleteCurrentLogicalDiskButton_Click"/>
-                            <Button x:Name="_setNewNameLogicalDiskButton" Content="set new name for cuurent" Click="_setNewNameLogicalDiskButton_Click"/>
-                            <Label Content="Name new logical disk"/>
-                            <TextBox x:Name="_nameForOldLogicalDiskTextBox" Width="150"/>
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                            <Button x:Name="_findCurrentLogicalDiskButton" Content="find logical disks" Click="_findCurrentLogicalDiskButton_Click"/>
-                            <Label Content="Current disks"/>
-                            <ListBox x:Name="_currentLogicalDiskListBox" Height="150" Width="200"/>
-                        </StackPanel>
-                    </Grid>
-                </Grid>
-            </TabItem>
-                <TabItem Header="Network">
-                    <Grid>
+                </TabItem>
+
+                <!-- ========== Папки и диски ========== -->
+                <TabItem Header="Папки и диски">
+                    <Grid Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Новые сетевые команды -->
-                        <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="4">
-                            <StackPanel Margin="6">
-                                <Label Content="Диагностика (адрес из поля)" FontWeight="Bold" Padding="0,2"/>
-                                <Button x:Name="_nslookupButton" Content="nslookup" Click="_nslookupButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_pingContinuousButton" Content="ping -t (непрерывный)" Click="_pingContinuousButton_Click" Margin="0,2" MinWidth="150"/>
+                        <!-- Очистка папок -->
+                        <GroupBox Grid.Row="0" Grid.Column="0" Header="Очистка папок">
+                            <StackPanel>
+                                <Button x:Name="_cleanDownloadFolderButton" Content="Очистить «Загрузки»" Click="_cleanDownloadFolder_Click"/>
+                                <Button x:Name="_cleadTempFolderButton" Content="Очистить Temp" Click="_cleanTempFolderButton_Click"/>
                             </StackPanel>
+                        </GroupBox>
 
-                            <StackPanel Margin="6">
-                                <Label Content="IP-конфигурация" FontWeight="Bold" Padding="0,2"/>
-                                <Button x:Name="_ipReleaseButton" Content="ipconfig /release" Click="_ipReleaseButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_ipRenewButton" Content="ipconfig /renew" Click="_ipRenewButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_ipFlushDnsButton" Content="ipconfig /flushdns" Click="_ipFlushDnsButton_Click" Margin="0,2" MinWidth="150"/>
+                        <!-- Сетевая папка и подключение диска -->
+                        <GroupBox Grid.Row="0" Grid.Column="1" Header="Сетевая папка">
+                            <StackPanel>
+                                <Label Content="Адрес папки (\\сервер\шара):"/>
+                                <TextBox x:Name="_setNetworkPathTextBox"/>
+                                <Label Content="Буква диска для подключения (необязательно):"/>
+                                <TextBox x:Name="_setNameForNewLogicalDiskTextBox"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="_openNetworkPathButton" Content="Открыть папку" Click="_openNetworkPathButton_Click"/>
+                                    <Button x:Name="_mapLogicalDiskButton" Content="Подключить как диск" Click="_mapLogicalDiskButton_Click"/>
+                                </StackPanel>
                             </StackPanel>
+                        </GroupBox>
 
-                            <StackPanel Margin="6">
-                                <Label Content="Состояние сети" FontWeight="Bold" Padding="0,2"/>
-                                <Button x:Name="_arpButton" Content="arp -a" Click="_arpButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_routePrintButton" Content="route print" Click="_routePrintButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_getmacButton" Content="getmac /v" Click="_getmacButton_Click" Margin="0,2" MinWidth="150"/>
-                            </StackPanel>
+                        <!-- SMART -->
+                        <GroupBox Grid.Row="1" Grid.Column="0" Header="Здоровье дисков (SMART)">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Button Grid.Row="0" x:Name="_checkSmartButton" Content="Проверить SMART" Click="_checkSmartButton_Click"/>
+                                <ListBox Grid.Row="1" x:Name="_diskHealthListBox"/>
+                            </Grid>
+                        </GroupBox>
 
-                            <StackPanel Margin="6">
-                                <Label Content="Wi-Fi" FontWeight="Bold" Padding="0,2"/>
-                                <Button x:Name="_wlanInterfacesButton" Content="wlan show interfaces" Click="_wlanInterfacesButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_wlanProfilesButton" Content="wlan show profiles" Click="_wlanProfilesButton_Click" Margin="0,2" MinWidth="150"/>
-                                <Button x:Name="_wlanDriversButton" Content="wlan show drivers" Click="_wlanDriversButton_Click" Margin="0,2" MinWidth="150"/>
-                            </StackPanel>
+                        <!-- Управление дисками -->
+                        <GroupBox Grid.Row="1" Grid.Column="1" Header="Управление дисками">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Button Grid.Row="0" x:Name="_findCurrentLogicalDiskButton" Content="Обновить список дисков" Click="_findCurrentLogicalDiskButton_Click"/>
+                                <ListBox Grid.Row="1" x:Name="_currentLogicalDiskListBox"/>
+                                <Button Grid.Row="2" x:Name="_deleteCurrentLogicaldiskButton" Content="Отключить выбранный диск" Click="_deleteCurrentLogicalDiskButton_Click"/>
+                                <StackPanel Grid.Row="3">
+                                    <Label Content="Новая метка выбранного диска:"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox x:Name="_nameForOldLogicalDiskTextBox" Width="180"/>
+                                        <Button x:Name="_setNewNameLogicalDiskButton" Content="Переименовать" Click="_setNewNameLogicalDiskButton_Click"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
 
-                            <StackPanel Margin="6">
-                                <Label Content="Адаптеры" FontWeight="Bold" Padding="0,2"/>
-                                <Button x:Name="_showNetInterfacesButton" Content="show interface" Click="_showNetInterfacesButton_Click" Margin="0,2" MinWidth="150"/>
-                            </StackPanel>
+                <!-- ========== Сеть ========== -->
+                <TabItem Header="Сеть">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <WrapPanel Grid.Row="0">
+                            <GroupBox Header="Диагностика (адрес из поля)">
+                                <StackPanel>
+                                    <Button x:Name="_nslookupButton" Content="nslookup" Click="_nslookupButton_Click" Width="150"/>
+                                    <Button x:Name="_pingContinuousButton" Content="ping -t (непрерывный)" Click="_pingContinuousButton_Click" Width="150"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="IP-конфигурация">
+                                <StackPanel>
+                                    <Button x:Name="_ipReleaseButton" Content="ipconfig /release" Click="_ipReleaseButton_Click" Width="150"/>
+                                    <Button x:Name="_ipRenewButton" Content="ipconfig /renew" Click="_ipRenewButton_Click" Width="150"/>
+                                    <Button x:Name="_ipFlushDnsButton" Content="ipconfig /flushdns" Click="_ipFlushDnsButton_Click" Width="150"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Состояние сети">
+                                <StackPanel>
+                                    <Button x:Name="_arpButton" Content="arp -a" Click="_arpButton_Click" Width="150"/>
+                                    <Button x:Name="_routePrintButton" Content="route print" Click="_routePrintButton_Click" Width="150"/>
+                                    <Button x:Name="_getmacButton" Content="getmac /v" Click="_getmacButton_Click" Width="150"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Wi-Fi">
+                                <StackPanel>
+                                    <Button x:Name="_wlanInterfacesButton" Content="wlan show interfaces" Click="_wlanInterfacesButton_Click" Width="150"/>
+                                    <Button x:Name="_wlanProfilesButton" Content="wlan show profiles" Click="_wlanProfilesButton_Click" Width="150"/>
+                                    <Button x:Name="_wlanDriversButton" Content="wlan show drivers" Click="_wlanDriversButton_Click" Width="150"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Адаптеры">
+                                <StackPanel>
+                                    <Button x:Name="_showNetInterfacesButton" Content="show interface" Click="_showNetInterfacesButton_Click" Width="150"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Восстановление системы">
+                                <StackPanel>
+                                    <Button x:Name="_sfcScannowButton" Content="sfc /scannow" Click="_sfcScannowButton_Click" Width="170"/>
+                                    <Button x:Name="_dismCheckHealthButton" Content="DISM CheckHealth" Click="_dismCheckHealthButton_Click" Width="170"/>
+                                    <Button x:Name="_dismScanHealthButton" Content="DISM ScanHealth" Click="_dismScanHealthButton_Click" Width="170"/>
+                                    <Button x:Name="_dismRestoreHealthButton" Content="DISM RestoreHealth" Click="_dismRestoreHealthButton_Click" Width="170"/>
+                                </StackPanel>
+                            </GroupBox>
                         </WrapPanel>
 
-                        <!-- Существующее содержимое (без изменений) -->
                         <Grid Grid.Row="1">
-                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                                <Button x:Name="_ResetNetworkButton" Content="Сброс сети" Click="_ResetNetwork_Click"/>
-                            </StackPanel>
-                            <Grid Width="600" Height="400" VerticalAlignment="Bottom" HorizontalAlignment="Right">
-                                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
-                                    <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click"/>
-                                    <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click"/>
-                                    <Button x:Name="_stopOutputButton" Content="stop output" Click="_stopOutputButton_Click"/>
-                                    <Label Content="ip adress"/>
-                                    <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8"/>
-                                    <Button x:Name="_clearipAddressTextBoxButton" Content="очистить поле" Click="_clearIpAddressTextBoxButton_Click"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <GroupBox Grid.Column="0" Header="Консоль">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <WrapPanel Grid.Row="0">
+                                        <Button x:Name="_showIpconfigButton" Content="ipconfig /all" Click="_showIpconfigButton_Click"/>
+                                        <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="Очистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
+                                        <Button x:Name="_stopOutputButton" Content="Остановить" Click="_stopOutputButton_Click"/>
+                                        <Button x:Name="_ResetNetworkButton" Content="Сброс сети" Click="_ResetNetwork_Click"/>
+                                    </WrapPanel>
+                                    <TextBox Grid.Row="1" x:Name="_outputNetworkConsoleTextBox"
+                             IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             local:AutoScrollBehavior.AutoScroll="True"/>
+                                </Grid>
+                            </GroupBox>
+
+                            <GroupBox Grid.Column="1" Header="По адресу">
+                                <StackPanel>
+                                    <Label Content="IP-адрес:"/>
+                                    <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8" Width="150"/>
+                                    <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click" Width="150"/>
+                                    <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click" Width="150"/>
+                                    <Button x:Name="_clearipAddressTextBoxButton" Content="Очистить поле" Click="_clearIpAddressTextBoxButton_Click" Width="150"/>
                                 </StackPanel>
-                                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                                    <Button x:Name="_showIpconfigButton" Content="ipconfig /all" Click="_showIpconfigButton_Click"/>
-                                    <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="очистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
-                                </StackPanel>
-                                <TextBox x:Name="_outputNetworkConsoleTextBox"
-                         IsReadOnly="True"
-                         FontFamily="Consolas"
-                         TextWrapping="NoWrap"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto"
-                         Width="400" Height="250"
-                         HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                         local:AutoScrollBehavior.AutoScroll="True"/>
-                            </Grid>
+                            </GroupBox>
                         </Grid>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Software">
-                    <Grid>
+
+                <!-- ========== Программы ========== -->
+                <TabItem Header="Программы">
+                    <Grid Margin="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" HorizontalAlignment="Left">
-                            <Button x:Name="_downloadCryptoProButton" Content="Download CryptoPro" Click="_downloadCryptoPro_Click"/>
-                            <Button x:Name="_templateButtonDesktopDirectroy" Content="Рабочий стол" Click="_templateButtonDesktopDirectroy_Click"/>
-                            <Button x:Name="_templateButtonDownloadDirectory" Content="Загрузки" Click="_templateButtonDownloadDirectory_Click"/>
-                            <Label Content="Укажите директорию для сохранения"/>
-                            <TextBox x:Name="_downloadDirectoryTextBox"/>
+                        <GroupBox Grid.Column="0" Header="Установка">
+                            <StackPanel>
+                                <Button x:Name="_downloadCryptoProButton" Content="Установить CryptoPro" Click="_downloadCryptoPro_Click" Width="185"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Grid.Column="1" Header="Установленные программы">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <WrapPanel Grid.Row="0">
+                                    <Button x:Name="_refreshInstalledProgramsButton" Content="Обновить список" Click="_refreshInstalledProgramsButton_Click"/>
+                                    <Button x:Name="_uninstallProgramButton" Content="Удалить выбранную" Click="_uninstallProgramButton_Click"/>
+                                </WrapPanel>
+                                <TextBox Grid.Row="1" x:Name="_searchProgramTextBox" TextChanged="_searchProgramTextBox_TextChanged"/>
+                                <ListBox Grid.Row="2" x:Name="_installedProgramsListBox"/>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
+
+                <!-- ========== Настройки системы ========== -->
+                <TabItem Header="Настройки системы">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal">
+                            <GroupBox Header="Блокировка экрана">
+                                <StackPanel>
+                                    <Label Content="Время (минуты):"/>
+                                    <TextBox x:Name="_timeToScreenLockTimerTextBox" Width="120" HorizontalAlignment="Left"/>
+                                    <Button x:Name="_setScreenLockTimerButton" Content="Установить таймер" Click="_setScreenLockTimerButton_Click"/>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Яркость (только ноутбуки)">
+                                <StackPanel>
+                                    <Label Content="Яркость (0-100):"/>
+                                    <TextBox x:Name="_setMonitorBrightnessTextBox" Text="100" Width="120" HorizontalAlignment="Left"/>
+                                    <Button x:Name="_setMonitorBrightnessButton" Content="Установить яркость" Click="_setMonitorBrightnessButton_Click"/>
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
 
-                        <Grid Grid.Column="1" Margin="8">
+                        <GroupBox Grid.Row="1" Header="Файл подкачки (pagefile)">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <ListBox Grid.Row="0" x:Name="_pageFileInfoListBox"/>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
+                                    <StackPanel Margin="0,0,16,0">
+                                        <Label x:Name="_minimumVirtualRamLabel" Content="Мин. (МБ):"/>
+                                        <TextBox x:Name="_minimumVirtualRamTextBox" Width="100" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,16,0">
+                                        <Label x:Name="_maximumVirtualRamLabel" Content="Макс. (МБ):"/>
+                                        <TextBox x:Name="_maximumVirtualRamTextBox" Width="100" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <Label x:Name="_setVirtualRamLabel" Content="Диск:"/>
+                                        <ListBox x:Name="_setVirtualRamSelectedDiskListBox" Width="230" Height="48"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <WrapPanel Grid.Row="2">
+                                    <Button x:Name="_setVirtualRamFindDisks" Content="Найти диски" Click="_setVirtualRamFindDisks_Click"/>
+                                    <Button x:Name="_setVirtualRamButton" Content="Установить размер" Click="_setVirtualRamButton_Click"/>
+                                    <Button x:Name="_refreshPageFileInfoButton" Content="Обновить" Click="_refreshPageFileInfoButton_Click"/>
+                                    <Button x:Name="_clearPageFileButton" Content="Очистить" Click="_clearPageFileButton_Click"/>
+                                    <Button x:Name="_setPageFileAutoButton" Content="По выбору системы" Click="_setPageFileAutoButton_Click"/>
+                                </WrapPanel>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
+
+                <!-- ========== Журнал событий ========== -->
+                <TabItem Header="Журнал событий" x:Name="_eventLogTabItem">
+                    <GroupBox Margin="4" Header="Журнал событий Windows">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <WrapPanel Grid.Row="0">
+                                <Label Content="Журнал:"/>
+                                <ComboBox x:Name="_eventLogNameComboBox" Width="120" SelectedIndex="0">
+                                    <ComboBoxItem Content="System" Tag="System"/>
+                                    <ComboBoxItem Content="Application" Tag="Application"/>
+                                </ComboBox>
+                                <Label Content="Тип:"/>
+                                <ComboBox x:Name="_eventLogFilterComboBox" Width="140" SelectedIndex="0">
+                                    <ComboBoxItem Content="Все" Tag="All"/>
+                                    <ComboBoxItem Content="Ошибка" Tag="Error"/>
+                                    <ComboBoxItem Content="Предупреждение" Tag="Warning"/>
+                                    <ComboBoxItem Content="Информация" Tag="Information"/>
+                                </ComboBox>
+                                <Label Content="Количество:"/>
+                                <TextBox x:Name="_eventLogCountTextBox" Text="50" Width="55"/>
+                                <Button x:Name="_loadEventLogButton" Content="Загрузить" Click="_loadEventLogButton_Click"/>
+                            </WrapPanel>
+                            <ListBox Grid.Row="1" x:Name="_eventLogListBox" SelectionChanged="_eventLogListBox_SelectionChanged" Margin="2,6"/>
+                            <StackPanel Grid.Row="2">
+                                <Label Content="Описание события:"/>
+                                <TextBox x:Name="_eventLogDetailTextBox" Height="130" IsReadOnly="True"
+                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                </TabItem>
+
+                <!-- ========== Процессы ========== -->
+                <TabItem x:Name="_processesTabItem" Header="Процессы">
+                    <GroupBox Margin="4" Header="Процессы">
+                        <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                <Button x:Name="_refreshInstalledProgramsButton" Content="Обновить список" Click="_refreshInstalledProgramsButton_Click" Margin="2"/>
-                                <Button x:Name="_uninstallProgramButton" Content="Удалить выбранную" Click="_uninstallProgramButton_Click" Margin="2"/>
-                            </StackPanel>
-                            <TextBox Grid.Row="1" x:Name="_searchProgramTextBox" TextChanged="_searchProgramTextBox_TextChanged" Margin="2"/>
-                            <ListBox Grid.Row="2" x:Name="_installedProgramsListBox" Margin="2"/>
+                            <WrapPanel Grid.Row="0">
+                                <Button x:Name="_refreshProcessesButton" Content="Обновить" Click="_refreshProcessesButton_Click"/>
+                                <Button x:Name="_killProcessButton" Content="Завершить выбранный" Click="_killProcessButton_Click"/>
+                            </WrapPanel>
+                            <TextBox Grid.Row="1" x:Name="_searchProcessTextBox" TextChanged="_searchProcessTextBox_TextChanged"/>
+                            <ListBox Grid.Row="2" x:Name="_processesListBox"/>
                         </Grid>
-                    </Grid>
+                    </GroupBox>
                 </TabItem>
-                <TabItem Header="System settings" Margin="-2,-2,0,2">
-                <Grid>
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <Label Content="Восстановление системы (вывод — в консоли вкладки Network)" FontWeight="Bold"/>
-                            <Button x:Name="_sfcScannowButton" Content="sfc /scannow" Click="_sfcScannowButton_Click" Margin="2" MinWidth="200"/>
-                            <Button x:Name="_dismCheckHealthButton" Content="DISM CheckHealth" Click="_dismCheckHealthButton_Click" Margin="2" MinWidth="200"/>
-                            <Button x:Name="_dismScanHealthButton" Content="DISM ScanHealth" Click="_dismScanHealthButton_Click" Margin="2" MinWidth="200"/>
-                            <Button x:Name="_dismRestoreHealthButton" Content="DISM RestoreHealth" Click="_dismRestoreHealthButton_Click" Margin="2" MinWidth="200"/>
-                        </StackPanel>
-                        <StackPanel HorizontalAlignment="Left">
-                        <Button x:Name="_setScreenLockTimerButton" Content="_setScreenLockTimer" Click="_setScreenLockTimerButton_Click" />
-                        <Label Content="Введи время в минутах"/>
-                        <TextBox x:Name="_timeToScreenLockTimerTextBox"/>
-                    </StackPanel>
-                    <StackPanel HorizontalAlignment="Right">
-                        <Label Content="Только для ноутбуков"/>
-                        <Button x:Name="_setMonitorBrightnessButton" Content="Установить яркость монитора (ноутубуки)" Click="_setMonitorBrightnessButton_Click" />
-                        <Label Content="Введи значение яркости"/>
-                        <TextBox x:Name="_setMonitorBrightnessTextBox" Text="100"/>
-                    </StackPanel>
-                    <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="200" Width="680" >
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                            <Label Content="Файл подкачки (pagefile)"/>
-                            <ListBox x:Name="_pageFileInfoListBox" Width="450" Height="100"/>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button x:Name="_refreshPageFileInfoButton" Content="Обновить" Width="150" Height="50" Click="_refreshPageFileInfoButton_Click"/>
-                                <Button x:Name="_clearPageFileButton" Content="Очистить" Width="150" Height="50" Click="_clearPageFileButton_Click"/>
-                                <Button x:Name="_setPageFileAutoButton" Content="По выбору системы" Width="150" Height="50" Click="_setPageFileAutoButton_Click"/>
-                            </StackPanel>
-                        </StackPanel>
-                        <Button x:Name="_setVirtualRamButton" Content="setVram" HorizontalAlignment="Right" VerticalAlignment="Top" Click="_setVirtualRamButton_Click"/>
-                        <Label x:Name="_setVirtualRamLabel" Content="Выбери диск и укажы желаемый размер" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+
+                <!-- ========== Автозагрузка ========== -->
+                <TabItem x:Name="_startupTabItem" Header="Автозагрузка">
+                    <GroupBox Margin="4" Header="Автозагрузка">
                         <Grid>
-                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                <Label x:Name="_minimumVirtualRamLabel" Content="min"/>
-                                <TextBox x:Name="_minimumVirtualRamTextBox" Width="100" HorizontalAlignment="Left"/>
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Label x:Name="_maximumVirtualRamLabel" Content="min"/>
-                                <TextBox x:Name="_maximumVirtualRamTextBox" Width="100" HorizontalAlignment="Right"/>
-                            </StackPanel>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <WrapPanel Grid.Row="0">
+                                <Button x:Name="_refreshStartupButton" Content="Обновить" Click="_refreshStartupButton_Click"/>
+                                <Button x:Name="_enableStartupButton" Content="Включить" Click="_enableStartupButton_Click"/>
+                                <Button x:Name="_disableStartupButton" Content="Выключить" Click="_disableStartupButton_Click"/>
+                            </WrapPanel>
+                            <TextBox Grid.Row="1" x:Name="_searchStartupTextBox" TextChanged="_searchStartupTextBox_TextChanged"/>
+                            <ListBox Grid.Row="2" x:Name="_startupListBox"/>
                         </Grid>
-                            <Button x:Name="_setVirtualRamFindDisks" Content="Find disks" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="_setVirtualRamFindDisks_Click"/>
-                            <ListBox x:Name="_setVirtualRamSelectedDiskListBox" Width="200" Height="50" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    </Grid>
-                </Grid>
-            </TabItem>
-                <TabItem Header="Event Log">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal">
-                            <Label Content="Журнал:"/>
-                            <ComboBox x:Name="_eventLogNameComboBox" Width="120" SelectedIndex="0">
-                                <ComboBoxItem Content="System" Tag="System"/>
-                                <ComboBoxItem Content="Application" Tag="Application"/>
-                            </ComboBox>
-                            <Label Content="Тип:"/>
-                            <ComboBox x:Name="_eventLogFilterComboBox" Width="140" SelectedIndex="0">
-                                <ComboBoxItem Content="Все" Tag="All"/>
-                                <ComboBoxItem Content="Ошибка" Tag="Error"/>
-                                <ComboBoxItem Content="Предупреждение" Tag="Warning"/>
-                                <ComboBoxItem Content="Информация" Tag="Information"/>
-                            </ComboBox>
-                            <Label Content="Кол-во:"/>
-                            <TextBox x:Name="_eventLogCountTextBox" Text="50" Width="50"/>
-                            <Button x:Name="_loadEventLogButton" Content="Загрузить" Click="_loadEventLogButton_Click" Margin="6,0,0,0"/>
-                        </StackPanel>
-                        <ListBox Grid.Row="1" x:Name="_eventLogListBox" SelectionChanged="_eventLogListBox_SelectionChanged" Margin="0,6"/>
-                        <TextBox Grid.Row="2" x:Name="_eventLogDetailTextBox" Height="130" IsReadOnly="True"
-                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
-                    </Grid>
-                </TabItem>
-                <TabItem Header="Processes">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal">
-                            <Button x:Name="_refreshProcessesButton" Content="Обновить" Click="_refreshProcessesButton_Click" Margin="2"/>
-                            <Button x:Name="_killProcessButton" Content="Завершить выбранный" Click="_killProcessButton_Click" Margin="2"/>
-                        </StackPanel>
-                        <TextBox Grid.Row="1" x:Name="_searchProcessTextBox" TextChanged="_searchProcessTextBox_TextChanged" Margin="2"/>
-                        <ListBox Grid.Row="2" x:Name="_processesListBox" Margin="2"/>
-                    </Grid>
+                    </GroupBox>
                 </TabItem>
 
-                <TabItem Header="Startup">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal">
-                            <Button x:Name="_refreshStartupButton" Content="Обновить" Click="_refreshStartupButton_Click" Margin="2"/>
-                            <Button x:Name="_enableStartupButton" Content="Включить" Click="_enableStartupButton_Click" Margin="2"/>
-                            <Button x:Name="_disableStartupButton" Content="Выключить" Click="_disableStartupButton_Click" Margin="2"/>
-                        </StackPanel>
-                        <TextBox Grid.Row="1" x:Name="_searchStartupTextBox" TextChanged="_searchStartupTextBox_TextChanged" Margin="2"/>
-                        <ListBox Grid.Row="2" x:Name="_startupListBox" Margin="2"/>
-                    </Grid>
-                </TabItem>
-
-                <TabItem Header="Hosts">
-                    <Grid Margin="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal">
-                            <Button x:Name="_loadHostsButton" Content="Загрузить" Click="_loadHostsButton_Click" Margin="2"/>
-                            <Button x:Name="_openHostsFolderButton" Content="Открыть директорию" Click="_openHostsFolderButton_Click" Margin="2"/>
-                            <Label Content="C:\Windows\System32\drivers\etc\hosts" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBox Grid.Row="1" x:Name="_hostsTextBox" IsReadOnly="True" TextWrapping="NoWrap"
-                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                 FontFamily="Consolas" Margin="2"/>
-                    </Grid>
+                <!-- ========== Hosts ========== -->
+                <TabItem x:Name="_hostsTabItem" Header="Hosts">
+                    <GroupBox Margin="4" Header="Файл hosts (C:\Windows\System32\drivers\etc\hosts)">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <WrapPanel Grid.Row="0">
+                                <Button x:Name="_loadHostsButton" Content="Загрузить" Click="_loadHostsButton_Click"/>
+                                <Button x:Name="_openHostsFolderButton" Content="Открыть директорию" Click="_openHostsFolderButton_Click"/>
+                            </WrapPanel>
+                            <TextBox Grid.Row="1" x:Name="_hostsTextBox" IsReadOnly="True" TextWrapping="NoWrap"
+                                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                     FontFamily="Consolas"/>
+                        </Grid>
+                    </GroupBox>
                 </TabItem>
             </TabControl>
 
-            <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
-                <Grid Grid.Row="1" Margin="4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- ========== Низ: лог и дашборд ========== -->
+            <Grid Grid.Row="1" Margin="4,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Чат -->
-                    <ListBox Grid.Column="0" x:Name="_mainChatListBox" Width="400" Height="140"
-             HorizontalAlignment="Left" ScrollViewer.CanContentScroll="True">
-                        <ListBox.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
-                            </ContextMenu>
-                        </ListBox.ContextMenu>
-                    </ListBox>
+                <GroupBox Grid.Column="0" Header="Лог">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="0" Content="Скопировать весь лог" Click="_copyAllLogsButton_Click"
+                HorizontalAlignment="Right"/>
+                        <ListBox Grid.Row="1" x:Name="_mainChatListBox" Width="410" Height="140"
+                 ScrollViewer.CanContentScroll="True">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Копировать выбранное" Click="CopySelected_Click"/>
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
+                    </Grid>
+                </GroupBox>
 
-                    <!-- Дашборд -->
-                    <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Margin="4,0,0,0" Padding="6">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <StackPanel>
-                                <!-- Краткая зона + кнопка-переключатель -->
-                                <DockPanel LastChildFill="True">
-                                    <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
-                                  Content="ⓘ" Width="28" Height="28" VerticalAlignment="Top"
-                                  Click="_dashboardToggleButton_Click"/>
-                                    <StackPanel>
-                                        <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
-                                        <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
-                                        <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
-                                    </StackPanel>
-                                </DockPanel>
-
-                                <TextBlock Text="Диски:" FontWeight="Bold" Margin="0,4,0,0"/>
-                                <ListBox x:Name="_dashDisksListBox" Height="70" HorizontalAlignment="Stretch"/>
-
-                                <!-- Расширенная зона (скрыта по умолчанию) -->
-                                <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
-                                    <Separator Margin="0,6"/>
-                                    <TextBlock Text="Система" FontWeight="Bold"/>
-                                    <TextBlock x:Name="_extSystemText"/>
-                                    <TextBlock x:Name="_extDiskActivityText"/>
-
-                                    <TextBlock Text="Сетевые адаптеры" FontWeight="Bold" Margin="0,6,0,0"/>
-                                    <ListBox x:Name="_extAdaptersListBox" Height="90"/>
-
-                                    <TextBlock Text="USB-устройства" FontWeight="Bold" Margin="0,6,0,0"/>
-                                    <ListBox x:Name="_extUsbListBox" Height="110"/>
+                <GroupBox Grid.Column="1" Header="Дашборд">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <DockPanel LastChildFill="True">
+                                <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
+                                              Content="ⓘ" Width="28" Height="26" VerticalAlignment="Top"
+                                              Click="_dashboardToggleButton_Click"/>
+                                <StackPanel>
+                                    <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
+                                    <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
+                                    <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
                                 </StackPanel>
+                            </DockPanel>
+
+                            <TextBlock Text="Диски:" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                            <ListBox x:Name="_dashDisksListBox" Height="66" HorizontalAlignment="Stretch"/>
+
+                            <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
+                                <Separator Margin="0,6"/>
+                                <TextBlock Text="Система" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="_extSystemText"/>
+                                <TextBlock x:Name="_extDiskActivityText"/>
+                                <TextBlock Text="Сетевые адаптеры" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                <ListBox x:Name="_extAdaptersListBox" Height="86"/>
+                                <TextBlock Text="USB-устройства" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                <ListBox x:Name="_extUsbListBox" Height="100"/>
                             </StackPanel>
-                        </ScrollViewer>
-                    </Border>
-                </Grid>
-            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </GroupBox>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

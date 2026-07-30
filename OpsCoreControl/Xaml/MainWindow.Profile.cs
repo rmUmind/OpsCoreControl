@@ -15,7 +15,7 @@ namespace OpsCoreControl
         private async void _showUsersProfiles_ClickAsync(object sender, RoutedEventArgs e)
         {
             _usersProfilesListBox.Items.Clear();
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, () => _userProfileManager.LoadUserProfiles());
+            await _userProfileManager.LoadUserProfiles();
         }
 
         // Удаляет выбранные профили (с подтверждением).

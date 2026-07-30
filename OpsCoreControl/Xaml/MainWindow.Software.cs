@@ -17,24 +17,10 @@ namespace OpsCoreControl
         // Ставит CryptoPro из встроенного в сборку установщика.
         private async void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
         {
-            await ButtonHelper.ExecuteWithColorAsync((Button)sender, async () =>
-            {
-                return await _softwareManager.RunEmbeddedInstallerAsync(
+            await _softwareManager.RunEmbeddedInstallerAsync(
                     "OpsCoreControl.Programs.CryptoPro-5.0.13800.exe",   // точное имя ресурса
                     "CryptoProCSP_installer.exe");                       // имя временного файла
-            });
-        }
-
-        // Подставляет в поле путь к рабочему столу.
-        private void _templateButtonDesktopDirectroy_Click  (object sender, RoutedEventArgs e)
-        {
-            _downloadDirectoryTextBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        }
-
-        // Подставляет в поле путь к папке "Загрузки".
-        private void _templateButtonDownloadDirectory_Click(object sender, RoutedEventArgs e)
-        {
-            _downloadDirectoryTextBox.Text = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            return;
         }
 
         private void _refreshInstalledProgramsButton_Click(object sender, RoutedEventArgs e)

@@ -8,6 +8,6 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("programs/cryptopro-5.0.13800.exe")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("353cc2be8c0711f1a569166de0f6c389.ico")]
 
 
