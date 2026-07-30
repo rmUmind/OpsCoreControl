@@ -11,10 +11,14 @@ using System.Threading.Tasks;
 using System.Windows.Shell;
 using static OpsCoreControl.Log;
 
+// Класс для работы с файловой системой и дисками:
+// очистка папок (Загрузки, Temp), информация о дисках и SMART,
+// управление файлом подкачки, открытие сетевых путей.
 namespace OpsCoreControl.WorkingСlasses
 {
     internal class FileSystemManager
     {
+        // Модель состояния физического диска (SMART).
         public class DiskHealthInfo
         {
             public string Model { get; set; }
@@ -24,6 +28,8 @@ namespace OpsCoreControl.WorkingСlasses
             public string SerialNumber { get; set; }
             public override string ToString() => $"{Model}  [{InterfaceType}]  {SizeGb} ГБ  —  SMART: {Status}";
         }
+
+        // Возвращает состояние физических дисков (аналог wmic diskdrive get status).
         public List<DiskHealthInfo> GetDiskHealth()
         {
             var result = new List<DiskHealthInfo>();
@@ -55,41 +61,47 @@ namespace OpsCoreControl.WorkingСlasses
             }
             return result;
         }
+
+        // Очищает папку "Загрузки". Занятые файлы пропускает, не прерывая очистку.
         public async Task<bool> CleanDownloadFolder()
         {
-            string path = "";
-            try
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+            if (!Directory.Exists(path))
             {
-                await Task.Run(() =>
+                Log.Add($"Папка не найдена: {path}", LogType.Error);
+                return false;
+            }
+
+            int deleted = 0;
+            int skipped = 0;
+
+            await Task.Run(() =>
+            {
+                foreach (string file in Directory.GetFiles(path))
                 {
-                    path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-                    var files = Directory.GetFiles(path);
-                    var directorys = Directory.GetDirectories(path);
-                    foreach (var file in files)
-                    {
-                        File.Delete(file);
-                    }
-                    foreach (var directory in directorys)
-                    {
-                        Directory.Delete(directory, true);
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Add("Исключение удаление папки: " + ex.Message, LogType.Error);
-            }
-            Log.Add($"Папка {path} отчишена", LogType.Success);
+                    try { File.Delete(file); deleted++; }
+                    catch { skipped++; } // файл занят — пропускаем
+                }
+                foreach (string dir in Directory.GetDirectories(path))
+                {
+                    try { Directory.Delete(dir, true); deleted++; }
+                    catch { skipped++; }
+                }
+            });
+
+            Log.Add($"Очистка {path}: удалено {deleted}, пропущено {skipped}.", LogType.Success);
             return true;
         }
 
+        // Очищает временные папки. Занятые файлы пропускает.
         public async Task<bool> CleanTempFolder()
         {
             var paths = new List<string>
-                    {
-                    Path.GetTempPath(),
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp")
-                    };
+            {
+                Path.GetTempPath(),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp")
+            };
 
             await Task.Run(() =>
             {
@@ -112,7 +124,7 @@ namespace OpsCoreControl.WorkingСlasses
                             File.Delete(file);
                             deleted++;
                         }
-                        catch { skipped++; }
+                        catch { skipped++; } // файл занят — пропускаем
                     }
 
                     foreach (string dir in Directory.GetDirectories(path))
@@ -131,6 +143,8 @@ namespace OpsCoreControl.WorkingСlasses
 
             return true;
         }
+
+        // Открывает сетевую папку в Проводнике. Сам дописывает \\, если их нет.
         public async Task<bool> OpenNetworkPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -159,6 +173,7 @@ namespace OpsCoreControl.WorkingСlasses
             }
         }
 
+        // Возвращает список готовых логических дисков с информацией об объёме.
         public async Task<List<DriveInfo>> GetDiskInfo()
         {
             try
@@ -175,7 +190,7 @@ namespace OpsCoreControl.WorkingСlasses
                 {
                     if (!drive.IsReady)
                     {
-                        Log.Add($"{drive.Name} - не готов (тип: {drive.DriveType})", LogType.Profile);
+                        Log.Add($"{drive.Name} - не готов (тип: {drive.DriveType})", LogType.Info);
                         continue;
                     }
 
@@ -190,7 +205,7 @@ namespace OpsCoreControl.WorkingСlasses
 
                     string message = $"{drive.Name} [{volumeLabel}] {driveType}: {totalGB} ГБ всего, {freeGB} ГБ свободно ({freePercent:F1}%)";
                     disks.Add(drive);
-                    Log.Add(message, LogType.Profile);
+                    Log.Add(message, LogType.Info);
                 }
                 return disks;
             }
@@ -201,18 +216,12 @@ namespace OpsCoreControl.WorkingСlasses
             return new List<DriveInfo>();
         }
 
-        /// <summary>
-        /// Устанавливает размер файла подкачки на указанном диске.
-        /// Не трогает pagefile на других дисках.
-        /// </summary>
-        /// <param name="driveLetter">Имя диска, например "C:\"</param>
-        /// <param name="minMB">Минимальный размер в МБ</param>
-        /// <param name="maxMB">Максимальный размер в МБ</param>
+        // Устанавливает размер файла подкачки на диске. Другие диски не трогает.
         public async Task<bool> SetPageFileSize(string driveLetter, int minMB, int maxMB)
         {
             try
             {
-                // Валидация диска (оставь как есть)
+                // Проверяем, что диск подходит для pagefile.
                 var drive = new DriveInfo(driveLetter.TrimEnd('\\'));
 
                 if (!drive.IsReady)
@@ -239,7 +248,7 @@ namespace OpsCoreControl.WorkingСlasses
 
                 await Task.Run(() =>
                 {
-                    // 1. Отключаем автоуправление (WMI)
+                    // 1. Отключаем автоуправление файлом подкачки (WMI).
                     using (var cs = new ManagementObject(
                         "Win32_ComputerSystem.Name=\"" + Environment.MachineName + "\""))
                     {
@@ -247,7 +256,7 @@ namespace OpsCoreControl.WorkingСlasses
                         cs.Put();
                     }
 
-                    // 2. Пишем в реестр — то же, что делает Windows UI
+                    // 2. Пишем в реестр — то же, что делает Windows UI.
                     string pagefilePath = driveLetter.TrimEnd('\\') + "\\pagefile.sys";
                     string regPath = @"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
 
@@ -255,7 +264,7 @@ namespace OpsCoreControl.WorkingСlasses
                     {
                         var entries = new List<string>();
 
-                        // Читаем существующие записи, пропускаем наш диск
+                        // Читаем существующие записи, пропускаем наш диск.
                         if (key.GetValue("PagingFiles") is string[] existing)
                         {
                             foreach (string entry in existing)
@@ -267,7 +276,7 @@ namespace OpsCoreControl.WorkingСlasses
                             }
                         }
 
-                        // Добавляем нашу запись: "D:\pagefile.sys 10000 20000"
+                        // Добавляем нашу запись: "D:\pagefile.sys 10000 20000".
                         entries.Add($"{pagefilePath} {minMB} {maxMB}");
 
                         key.SetValue("PagingFiles", entries.ToArray(), RegistryValueKind.MultiString);
@@ -284,6 +293,7 @@ namespace OpsCoreControl.WorkingСlasses
             }
         }
 
+        // Перевод типа диска в понятное описание.
         private string GetDriveTypeDescription(DriveType driveType)
         {
             switch (driveType)
@@ -297,9 +307,7 @@ namespace OpsCoreControl.WorkingСlasses
             }
         }
 
-        /// <summary>
-        /// Читает текущие записи pagefile из реестра + свободное место на дисках.
-        /// </summary>
+        // Читает текущие записи pagefile из реестра и свободное место на дисках.
         public async Task<List<string>> GetPageFileInfo()
         {
             var result = new List<string>();
@@ -314,7 +322,7 @@ namespace OpsCoreControl.WorkingСlasses
                     {
                         foreach (string entry in entries)
                         {
-                            // "D:\pagefile.sys 10000 20000"  →  parts[0]=путь, parts[1]=min, parts[2]=max
+                            // "D:\pagefile.sys 10000 20000" → parts[0]=путь, parts[1]=min, parts[2]=max.
                             string[] parts = entry.Split(' ');
                             string path = parts[0];
 
@@ -333,7 +341,7 @@ namespace OpsCoreControl.WorkingСlasses
                                     freeSpace = $"свободно {freeMB} МБ";
                                 }
                             }
-                            catch { }
+                            catch { } // диск мог быть недоступен — оставим "диск недоступен"
 
                             result.Add($"{path} | {sizes} | {freeSpace}");
                         }
@@ -344,9 +352,7 @@ namespace OpsCoreControl.WorkingСlasses
             return result;
         }
 
-        /// <summary>
-        /// Удаляет запись pagefile для выбранного диска. Другие диски не трогает.
-        /// </summary>
+        // Удаляет запись pagefile для диска. Другие диски не трогает.
         public async Task<bool> ClearPageFile(string driveLetter)
         {
             try
@@ -384,9 +390,8 @@ namespace OpsCoreControl.WorkingСlasses
                 return false;
             }
         }
-        /// <summary>
-        /// Переводит pagefile на диске в режим "по выбору системы".
-        /// </summary>
+
+        // Переводит pagefile на диске в режим "по выбору системы".
         public async Task<bool> SetPageFileAuto(string driveLetter)
         {
             try
@@ -425,7 +430,7 @@ namespace OpsCoreControl.WorkingСlasses
                             }
                         }
 
-                        // Без min/max → "по выбору системы"
+                        // Без min/max — значит "по выбору системы".
                         entries.Add(pagefilePath);
 
                         key.SetValue("PagingFiles", entries.ToArray(), RegistryValueKind.MultiString);

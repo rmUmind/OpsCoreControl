@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-// Помощник для кнопок: на время операции блокирует кнопку и подсвечивает её по результату.
+// Класс для кнопок: на время операции блокирует кнопку и подсвечивает её по результату.
 // Жёлтый — выполняется, зелёный — успех, красный — ошибка.
 public static class ButtonHelper
 {

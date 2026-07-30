@@ -8,11 +8,15 @@ using System.Management;
 using System.Threading.Tasks;
 using static OpsCoreControl.Log;
 
+// Класс для работы с сетевыми дисками и сброса сети:
+// подключение/отключение дисков (net use), смена метки, список дисков,
+// видимость дисков между сессиями и сброс сети (winsock / IP / DNS).
 namespace OpsCoreControl.WorkingСlasses
 {
     internal class NetworkManager
     {
-        // Подключить сетевой диск
+        // Подключает сетевую шару как диск через net use.
+        // Если буква не указана — подбирает свободную.
         public async Task<bool> MapNetworkDrive(string letter, string uncPath, bool persistent = true)
         {
             if (string.IsNullOrWhiteSpace(uncPath))
@@ -20,11 +24,14 @@ namespace OpsCoreControl.WorkingСlasses
                 Log.Add("Не указан сетевой путь.", LogType.Error);
                 return false;
             }
+
+            // Приводим путь к виду \\server\share.
             if (!uncPath.StartsWith(@"\\"))
             {
                 uncPath = @"\\" + uncPath.TrimStart('\\');
             }
 
+            // Без имени шары подключить нельзя — только сервер не мапится.
             string withoutPrefix = uncPath.Substring(2);
             if (!withoutPrefix.Contains('\\'))
             {
@@ -51,7 +58,7 @@ namespace OpsCoreControl.WorkingСlasses
                 timeoutMs: 5000);
         }
 
-        // Отключить сетевой диск
+        // Отключает сетевой диск.
         public async Task<bool> UnmapNetworkDrive(string letter)
         {
             string key = letter.EndsWith(":") ? letter : letter + ":";
@@ -63,7 +70,7 @@ namespace OpsCoreControl.WorkingСlasses
                 timeoutMs: 5000);
         }
 
-        // Переименовать метку диска
+        // Меняет метку диска (команда label).
         public async Task<bool> RenameLogicalDisk(string letter, string newName)
         {
             string key = letter.EndsWith(":") ? letter : letter + ":";
@@ -75,7 +82,7 @@ namespace OpsCoreControl.WorkingСlasses
                 timeoutMs: 5000);
         }
 
-        // Список всех логических дисков
+        // Возвращает список логических дисков с типом, меткой и UNC для сетевых.
         public List<string> GetLogicalDrives()
         {
             var result = new List<string>();
@@ -99,7 +106,8 @@ namespace OpsCoreControl.WorkingСlasses
             return result;
         }
 
-        // Один раз включает видимость дисков между сессиями (идемпотентно)
+        // Включает видимость сетевых дисков между сессиями (идемпотентно).
+        // Для применения нужна однократная перезагрузка.
         public void EnsureLinkedConnectionsEnabled()
         {
             const string regPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System";
@@ -121,7 +129,7 @@ namespace OpsCoreControl.WorkingСlasses
             }
         }
 
-        // Подбор свободной буквы (с Z вниз)
+        // Подбирает свободную букву диска, перебирая с Z вниз (A-C не трогаем).
         private string GetFreeDriveLetter()
         {
             var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -137,6 +145,7 @@ namespace OpsCoreControl.WorkingСlasses
             return null;
         }
 
+        // Перевод кода типа диска из WMI в понятное имя.
         private string GetDriveTypeName(object driveType)
         {
             switch (driveType?.ToString())
@@ -149,14 +158,17 @@ namespace OpsCoreControl.WorkingСlasses
                 default: return "Другой";
             }
         }
-        public async Task<bool> ClearNonPagedPool()
+
+        // Сброс сети: winsock, TCP/IP и очистка DNS-кэша.
+        // Название метода историческое — по смыслу это именно сброс сети, а не очистка пула.
+        public async Task<bool> ResetNetwork()
         {
             var commands = new List<string>
-    {
-        "/c netsh winsock reset",
-        "/c netsh int ip reset",
-        "/c ipconfig /flushdns"
-    };
+            {
+                "/c netsh winsock reset",
+                "/c netsh int ip reset",
+                "/c ipconfig /flushdns"
+            };
 
             bool allOk = true;
             foreach (string command in commands)

@@ -5,7 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using static OpsCoreControl.Log;
 
-// ref https://stackoverflow.com/questions/4013622/adjust-screen-brightness-using-c-sharp
+// Класс управления яркостью мониторов через Win32 API (dxva2.dll).
+// Работает только с мониторами, поддерживающими DDC/CI (как правило, ноутбуки).
+// Основано на: https://stackoverflow.com/questions/4013622/adjust-screen-brightness-using-c-sharp
 public class PhysicalMonitorBrightnessController : IDisposable
 {
     #region DllImport
@@ -40,12 +42,14 @@ public class PhysicalMonitorBrightnessController : IDisposable
 
     private IReadOnlyCollection<MonitorInfo> Monitors { get; set; }
 
+    // При создании сразу получаем список мониторов.
     public PhysicalMonitorBrightnessController()
     {
         UpdateMonitors();
     }
 
     #region Get & Set
+    // Ставит яркость (0-100%) на все мониторы.
     public bool Set(uint brightness)
     {
         return Set(brightness, true);
@@ -58,33 +62,43 @@ public class PhysicalMonitorBrightnessController : IDisposable
             bool isSomeFail = false;
             foreach (var monitor in Monitors)
             {
+                // Пересчитываем проценты в реальные значения конкретного монитора.
                 uint realNewValue = (monitor.MaxValue - monitor.MinValue) * brightness / 100 + monitor.MinValue;
                 if (SetMonitorBrightness(monitor.Handle, realNewValue))
                 {
                     monitor.CurrentValue = realNewValue;
                 }
-                else if (refreshMonitorsIfNeeded)
+                else
                 {
                     isSomeFail = true;
-                    break;
+                    if (refreshMonitorsIfNeeded) break; // выходим, чтобы обновить список и повторить
                 }
             }
 
+            // Не получилось или мониторов нет — обновляем список и пробуем ещё раз (уже без обновления).
             if (refreshMonitorsIfNeeded && (isSomeFail || !Monitors.Any()))
             {
                 UpdateMonitors();
-                Set(brightness, false);
+                return Set(brightness, false);
             }
-            Log.Add($"Яркость выставленна на {brightness}%", LogType.Success);
+
+            if (isSomeFail)
+            {
+                Log.Add($"Не удалось выставить яркость {brightness}% на всех мониторах.", LogType.Error);
+                return false;
+            }
+
+            Log.Add($"Яркость выставлена на {brightness}%.", LogType.Success);
             return true;
         }
         catch (Exception ex)
         {
-            Log.Add($"Исключение при выставление яркости: " + ex.Message, LogType.Success);
+            Log.Add($"Ошибка при выставлении яркости: {ex.Message}", LogType.Error);
             return false;
         }
     }
 
+    // Возвращает среднюю текущую яркость по всем мониторам.
     public int Get(int v)
     {
         if (!Monitors.Any())
@@ -95,6 +109,7 @@ public class PhysicalMonitorBrightnessController : IDisposable
     }
     #endregion
 
+    // Перечисляет мониторы и считывает их диапазон и текущую яркость.
     private void UpdateMonitors()
     {
         DisposeMonitors(this.Monitors);
@@ -105,14 +120,14 @@ public class PhysicalMonitorBrightnessController : IDisposable
             uint physicalMonitorsCount = 0;
             if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, ref physicalMonitorsCount))
             {
-                // Cannot get monitor count
+                // Не удалось получить количество мониторов.
                 return true;
             }
 
             var physicalMonitors = new PHYSICAL_MONITOR[physicalMonitorsCount];
             if (!GetPhysicalMonitorsFromHMONITOR(hMonitor, physicalMonitorsCount, physicalMonitors))
             {
-                // Cannot get physical monitor handle
+                // Не удалось получить дескрипторы мониторов.
                 return true;
             }
 
@@ -139,8 +154,10 @@ public class PhysicalMonitorBrightnessController : IDisposable
         }, IntPtr.Zero);
 
         this.Monitors = monitors;
+        Log.Add($"Найдено мониторов с управлением яркостью: {monitors.Count}", LogType.Debug);
     }
 
+    // Освобождает дескрипторы мониторов.
     public void Dispose()
     {
         DisposeMonitors(Monitors);
@@ -175,6 +192,7 @@ public class PhysicalMonitorBrightnessController : IDisposable
         public int bottom;
     }
 
+    // Данные одного монитора: дескриптор и диапазон яркости.
     public class MonitorInfo
     {
         public uint MinValue { get; set; }

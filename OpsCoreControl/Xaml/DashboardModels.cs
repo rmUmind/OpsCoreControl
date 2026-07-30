@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 
+// Модели данных для дашборда.
+// Класс DashBoard периодически собирает их в DashboardData и шлёт подписчикам через событие Updated.
 namespace OpsCoreControl
 {
+    // Снимок состояния логического диска.
     public class DiskSnapshot
     {
         public string Letter { get; set; }
@@ -13,6 +16,7 @@ namespace OpsCoreControl
         public string Unc { get; set; }       // только для сетевых
     }
 
+    // Снимок состояния сетевого адаптера.
     public class AdapterSnapshot
     {
         public string Name { get; set; }
@@ -22,12 +26,14 @@ namespace OpsCoreControl
         public long SpeedMbps { get; set; }
     }
 
+    // Снимок USB-устройства.
     public class UsbSnapshot
     {
         public string Name { get; set; }
         public string Description { get; set; }
     }
 
+    // Снимок состояния WiFi.
     public class WifiSnapshot
     {
         public bool Connected { get; set; }
@@ -35,6 +41,7 @@ namespace OpsCoreControl
         public int SignalPercent { get; set; }
     }
 
+    // Снимок общих сведений о системе.
     public class SystemSnapshot
     {
         public string PcName { get; set; }
@@ -45,6 +52,7 @@ namespace OpsCoreControl
         public string PublicIp { get; set; }
     }
 
+    // Полный снапшот дашборда: всё, что показывается на панели мониторинга.
     public class DashboardData
     {
         public float CpuPercent { get; set; }

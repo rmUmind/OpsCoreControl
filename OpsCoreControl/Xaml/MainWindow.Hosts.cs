@@ -3,12 +3,17 @@ using System.Diagnostics;
 using System.IO;
 using static OpsCoreControl.Log;
 
+// Класс для работы с файлом hosts: чтение содержимого и открытие папки с файлом.
+// Приложение не пишет в hosts напрямую — его защищает «Контролируемый доступ к папкам»,
+// поэтому правка идёт вручную через Блокнот (отсюда только чтение и открытие папки).
 namespace OpsCoreControl.WorkingСlasses
 {
     internal class HostsManager
     {
+        // Путь к файлу hosts (через SystemDirectory, без жёсткой привязки к диску C:).
         private static readonly string HostsPath = Path.Combine(Environment.SystemDirectory, "drivers", "etc", "hosts");
 
+        // Читает и возвращает содержимое hosts. При ошибке возвращает пустую строку.
         public string ReadHosts()
         {
             try { return File.ReadAllText(HostsPath); }
@@ -19,11 +24,12 @@ namespace OpsCoreControl.WorkingСlasses
             }
         }
 
+        // Открывает папку etc в Проводнике с выделенным файлом hosts (для ручной правки).
         public void OpenHostsFolder()
         {
             try
             {
-                // Откроет папку etc с выделенным файлом hosts
+                // /select — открыть папку и сразу выделить файл hosts.
                 Process.Start("explorer.exe", $"/select,\"{HostsPath}\"");
                 Log.Add("Открыта папка с файлом hosts.", LogType.Info);
             }
