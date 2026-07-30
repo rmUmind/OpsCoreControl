@@ -106,6 +106,7 @@ namespace OpsCoreControl.WorkingСlasses
         }
 
         // Достаёт встроенный установщик из ресурсов сборки и запускает его (с UAC).
+        // .exe запускается напрямую; .msi — через msiexec.exe /i (иначе verb runas не поднимает установку).
         public async Task<bool> RunEmbeddedInstallerAsync(string resourceName, string fileName)
         {
             if (!IsEmbeddedResourceAvailable(resourceName))
@@ -113,6 +114,15 @@ namespace OpsCoreControl.WorkingСlasses
                 Log.Add($"Встроенный ресурс не найден: {resourceName}. Возможно, файл не добавлен в проект.", LogType.Error);
                 return false;
             }
+
+            // Расширение оригинала определяет тип установщика (.exe или .msi).
+            string originalExt = Path.GetExtension(resourceName);
+            bool isMsi = string.Equals(originalExt, ".msi", StringComparison.OrdinalIgnoreCase);
+
+            // Временный файл сохраняем с тем же расширением, что оригинал (для msi это критично).
+            string tempName = fileName;
+            if (!string.Equals(Path.GetExtension(tempName), originalExt, StringComparison.OrdinalIgnoreCase))
+                tempName = Path.ChangeExtension(tempName, originalExt);
 
             string tempFilePath = null;
             try
@@ -128,7 +138,7 @@ namespace OpsCoreControl.WorkingСlasses
                     }
 
                     // 2. Сохраняем во временный файл.
-                    tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
+                    tempFilePath = Path.Combine(Path.GetTempPath(), tempName);
                     Log.Add($"Извлечение ресурса во временный файл: {tempFilePath}", LogType.Info);
 
                     using (var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -139,17 +149,25 @@ namespace OpsCoreControl.WorkingСlasses
 
                 Log.Add($"Ресурс успешно извлечён: {tempFilePath}", LogType.Success);
 
-                // 3. Запускаем установщик с правами администратора.
+                // 3. Готовим запуск с правами администратора.
                 var psi = new ProcessStartInfo
                 {
-                    FileName = tempFilePath,
                     UseShellExecute = true,
-                    Verb = "runas", // запуск от администратора (подтверждение UAC)
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
+                    Verb = "runas" // запрос UAC
                 };
 
-                Log.Add($"Запуск установщика: {fileName}", LogType.Info);
+                if (isMsi)
+                {
+                    // msi ставим через msiexec — это даёт валидный процесс и корректный UAC.
+                    psi.FileName = "msiexec.exe";
+                    psi.Arguments = $"/i \"{tempFilePath}\"";
+                }
+                else
+                {
+                    psi.FileName = tempFilePath;
+                }
+
+                Log.Add($"Запуск установщика: {tempName}", LogType.Info);
 
                 using (var process = Process.Start(psi))
                 {
@@ -162,14 +180,19 @@ namespace OpsCoreControl.WorkingСlasses
                     // Ждём завершения в фоновом потоке, чтобы не вешать UI.
                     await Task.Run(() => process.WaitForExit());
 
-                    if (process.ExitCode == 0)
+                    int code = process.ExitCode;
+                    // Для msi код 3010 = установка прошла, но нужна перезагрузка — это успех.
+                    bool ok = (code == 0) || (isMsi && code == 3010);
+
+                    if (ok)
                     {
-                        Log.Add($"Установщик успешно завершён. Код: {process.ExitCode}", LogType.Success);
+                        string note = (isMsi && code == 3010) ? " (требуется перезагрузка)" : "";
+                        Log.Add($"Установщик успешно завершён. Код: {code}{note}", LogType.Success);
                         return true;
                     }
                     else
                     {
-                        Log.Add($"Установщик завершился с ошибкой. Код: {process.ExitCode}", LogType.Error);
+                        Log.Add($"Установщик завершился с ошибкой. Код: {code}", LogType.Error);
                         return false;
                     }
                 }

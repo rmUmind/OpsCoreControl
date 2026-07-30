@@ -5,29 +5,49 @@ using System.Windows;
 using System.Windows.Controls;
 using static OpsCoreControl.Log;
 
-// Часть главного окна: обработка вкладки Software —
-// установка CryptoPro, список установленных программ с поиском и удалением,
-// шаблоны путей для сохранения.
+// Часть главного окна: обработка вкладки Программы —
+// установка CryptoPro и плагинов, список установленных программ с поиском и удалением.
 namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
         private List<InstalledProgram> _allPrograms = new List<InstalledProgram>();
 
-        // Ставит CryptoPro из встроенного в сборку установщика.
-        private async void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
-        {
-            await _softwareManager.RunEmbeddedInstallerAsync(
-                    "OpsCoreControl.Programs.CryptoPro-5.0.13800.exe",   // точное имя ресурса
-                    "CryptoProCSP_installer.exe");                       // имя временного файла
-            return;
-        }
-
-        private void _refreshInstalledProgramsButton_Click(object sender, RoutedEventArgs e)
+        // Перечитывает установленные программы и применяет фильтр.
+        private void RefreshPrograms()
         {
             _allPrograms = _softwareManager.GetInstalledPrograms();
             FilterPrograms();
             Log.Add($"Найдено программ: {_allPrograms.Count}", LogType.Info);
+        }
+
+        private void _refreshInstalledProgramsButton_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshPrograms();
+        }
+
+        // Ставит CryptoPro CSP из встроенного в сборку установщика.
+        private async void _downloadCryptoPro_Click(object sender, RoutedEventArgs e)
+        {
+            await _softwareManager.RunEmbeddedInstallerAsync(
+                "OpsCoreControl.Programs.CryptoPro.exe",   // точное имя ресурса
+                "CryptoProCSP_installer.exe");                       // имя временного файла
+        }
+
+        // Ставит CryptoPro Plugin из встроенного установщика.
+        private async void _installCryptoProPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            await _softwareManager.RunEmbeddedInstallerAsync(
+                "OpsCoreControl.Programs.CryptoProPlugin.exe",   // точное имя ресурса 
+                "CryptoProPlugin_installer.exe");                // имя временного файла
+        }
+
+        // Ставит Cisco AnyConnect из встроенного установщика.
+        private async void _installCiscoAnyConnect_Click(object sender, RoutedEventArgs e)
+        {
+            await _softwareManager.RunEmbeddedInstallerAsync(
+                "OpsCoreControl.Programs.CiscoAnyConnect.msi",   // точное имя ресурса 
+                "CiscoAnyConnect_installer.exe");                // имя временного файла
         }
 
         // Фильтрует список программ при вводе.

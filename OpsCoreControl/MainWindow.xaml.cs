@@ -5,12 +5,14 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
-        // Переключает светлую / тёмную тему по флажку в меню.
+        // Переключает тему по нажатию пункта меню (без галочки — инвертируем состояние сами).
         private void _toggleTheme_Click(object sender, RoutedEventArgs e)
         {
-            bool dark = _darkThemeMenuItem.IsChecked == true;
-            App.SetTheme(dark);
-            ApplyWindowChromeTheme(dark);
+            _isDarkTheme = !_isDarkTheme;
+            App.SetTheme(_isDarkTheme);
+            ApplyWindowChromeTheme(_isDarkTheme);
+            // Подпись показывает следующее действие; если хочешь статичный текст — убери эту строку.
+            _darkThemeMenuItem.Header = _isDarkTheme ? "Светлая тема" : "Тёмная тема";
         }
     }
 }

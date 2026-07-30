@@ -154,6 +154,9 @@
     <None Include=".gitignore" />
     <None Include="app.manifest" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Programs\CiscoAnyConnect.msi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -161,9 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Programs\CryptoPro-5.0.13800.exe" Condition="Exists('Programs\CryptoPro-5.0.13800.exe')" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
@@ -179,6 +179,14 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="353cc2be8c0711f1a569166de0f6c389.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Programs\CryptoPro.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Programs\CryptoProPlugin.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

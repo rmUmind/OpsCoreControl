@@ -8,7 +8,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="Инфо" Click="_showAbout_Click"/>
             <MenuItem Header="Bug Report" Click="_showBugReport_Click"/>
-            <MenuItem x:Name="_darkThemeMenuItem" Header="Тёмная тема" IsCheckable="True" Click="_toggleTheme_Click"/>
+            <MenuItem x:Name="_darkThemeMenuItem" Header="Тёмная тема" Click="_toggleTheme_Click"/>
         </Menu>
 
         <Grid>
@@ -41,7 +41,9 @@
                                     <Button x:Name="_startCustomProcessButton" Content="Запустить" Click="_startCustomProcessButton_Click" Width="185"/>
                                     <Button x:Name="_startCustomProcessSelectItemButton" Content="Выбрать из списка" Click="_startCustomProcessSelectItemButton_Click" Width="185"/>
                                     <ListBox x:Name="_startCustomProcessSelectItemListBox" Width="185" Height="120"
-                                             MouseDoubleClick="_startCustomProcessSelectItemListBox_MouseDoubleClick"/>
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     MouseDoubleClick="_startCustomProcessSelectItemListBox_MouseDoubleClick"/>
                                 </StackPanel>
                             </GroupBox>
                         </StackPanel>
@@ -73,7 +75,7 @@
                 </TabItem>
 
                 <!-- ========== Профили ========== -->
-                <TabItem Header="Профили">
+                <TabItem x:Name="_profilesTabItem" Header="Профили">
                     <Grid Margin="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -100,7 +102,7 @@
                 </TabItem>
 
                 <!-- ========== Папки и диски ========== -->
-                <TabItem Header="Папки и диски">
+                <TabItem x:Name="_foldersTabItem" Header="Папки и диски">
                     <Grid Margin="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -259,7 +261,7 @@
                 </TabItem>
 
                 <!-- ========== Программы ========== -->
-                <TabItem Header="Программы">
+                <TabItem x:Name="_programsTabItem" Header="Программы">
                     <Grid Margin="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -268,7 +270,9 @@
 
                         <GroupBox Grid.Column="0" Header="Установка">
                             <StackPanel>
-                                <Button x:Name="_downloadCryptoProButton" Content="Установить CryptoPro" Click="_downloadCryptoPro_Click" Width="185"/>
+                                <Button x:Name="_downloadCryptoProButton" Content="Установить CryptoPro" Click="_downloadCryptoPro_Click" Width="210"/>
+                                <Button x:Name="_installCryptoProPluginButton" Content="Установить CryptoPro Plugin" Click="_installCryptoProPlugin_Click" Width="210"/>
+                                <Button x:Name="_installCiscoAnyConnectButton" Content="Установить Cisco AnyConnect" Click="_installCiscoAnyConnect_Click" Width="210"/>
                             </StackPanel>
                         </GroupBox>
 
@@ -291,7 +295,7 @@
                 </TabItem>
 
                 <!-- ========== Настройки системы ========== -->
-                <TabItem Header="Настройки системы">
+                <TabItem x:Name="_systemSettingsTabItem" Header="Настройки системы">
                     <Grid Margin="4">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>

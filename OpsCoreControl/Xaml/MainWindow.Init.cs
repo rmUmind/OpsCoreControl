@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -37,6 +38,11 @@ namespace OpsCoreControl
         private bool _startupLoaded;
         private bool _hostsLoaded;
         private bool _servicesLoaded;
+        private bool _foldersLoaded;
+        private bool _programsLoaded;
+        private bool _isDarkTheme;
+        private bool _profilesLoaded;
+        private bool _systemSettingsLoaded;
 
         // Анти-мерцание: перерисовываем списки только при изменении.
         private List<string> _lastDisks = new List<string>();
@@ -74,29 +80,25 @@ namespace OpsCoreControl
             IntPtr hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd == IntPtr.Zero)
             {
-                Log.Add("DWM: handle окна ещё не создан.", LogType.Debug);
-                return;
+                return; // окно ещё не создано — красить нечего
             }
 
             // Тёмный non-client area: красит заголовок и рамку в системный тёмный/светлый.
             int useDark = dark ? 1 : 0;
-            int hrDark = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useDark, sizeof(int));
+            DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useDark, sizeof(int));
 
-            // Точный цвет заголовка и рамки (только Win11 22000+; на старых билдах вернёт E_INVALIDARG — это нормально).
+            // Точный цвет заголовка и рамки (только Win11 22000+; на старых билдах вернёт ошибку — это нормально, игнорируем).
             int color = dark ? 0x001E1E1E : 0x00EFEFEF; // COLORREF 0x00BBGGRR
-            int hrCaption = DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref color, sizeof(int));
-            int hrBorder = DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref color, sizeof(int));
+            DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref color, sizeof(int));
+            DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref color, sizeof(int));
 
             // Пересчитываем рамку.
             SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 
-            // Заставляем DWM пересчитать палитру заголовка прямо сейчас: имитируем уход и возврат фокуса.
-            // Без этого заголовок меняет цвет только когда пользователь реально кликнет в другое окно.
-            SendMessage(hwnd, WM_NCACTIVATE, IntPtr.Zero, IntPtr.Zero);   // «стало неактивным»
-            SendMessage(hwnd, WM_NCACTIVATE, new IntPtr(1), IntPtr.Zero); // «стало активным» — с новым цветом
-
-            Log.Add($"DWM тема={(dark ? "тёмная" : "светлая")}: dark={hrDark}, caption={hrCaption}, border={hrBorder}.", LogType.Debug);
+            // Имитируем уход и возврат фокуса, чтобы заголовок перекрасился сразу, без клика в другое окно.
+            SendMessage(hwnd, WM_NCACTIVATE, IntPtr.Zero, IntPtr.Zero);
+            SendMessage(hwnd, WM_NCACTIVATE, new IntPtr(1), IntPtr.Zero);
         }
 
         public MainWindow()
@@ -133,8 +135,8 @@ namespace OpsCoreControl
             _hostsManager = new HostsManager();
 
             // Красим заголовок/рамку после создания окна и после первой отрисовки.
-            this.SourceInitialized += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
-            this.ContentRendered += (s, e) => ApplyWindowChromeTheme(_darkThemeMenuItem.IsChecked == true);
+            this.SourceInitialized += (s, e) => ApplyWindowChromeTheme(_isDarkTheme);
+            this.ContentRendered += (s, e) => ApplyWindowChromeTheme(_isDarkTheme);
 
             // Список оснасток для быстрого запуска (вкладка Services).
             var tools = new List<SystemTool>
@@ -175,21 +177,48 @@ namespace OpsCoreControl
             Log.LogDebug += message => Dispatcher.Invoke(() => _mainChatListBox.Items.Add(message));
         }
 
+        // Загружает профили пользователей (строки приходят в список через событие лога LogProfile).
+        private async Task LoadProfilesAsync()
+        {
+            _usersProfilesListBox.Items.Clear();
+            await _userProfileManager.LoadUserProfiles();
+        }
+
         // Подгружает данные при первом открытии вкладки (повторно не грузит).
-        private void _mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void _mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // Событие приходит и от внутренних списков/комбобоксов — реагируем только на смену вкладки.
             if (!(e.Source is TabControl)) return;
 
-            if (_mainTabControl.SelectedItem == _processesTabItem && !_processesLoaded)
-            {
-                RefreshProcesses();
-                _processesLoaded = true;
-            }
-            else if (_mainTabControl.SelectedItem == _servicesTabItem && !_servicesLoaded)
+            if (_mainTabControl.SelectedItem == _servicesTabItem && !_servicesLoaded)
             {
                 RefreshServices();
                 _servicesLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _profilesTabItem && !_profilesLoaded)
+            {
+                _profilesLoaded = true;
+                await LoadProfilesAsync();
+            }
+            else if (_mainTabControl.SelectedItem == _foldersTabItem && !_foldersLoaded)
+            {
+                RefreshLogicalDisks();
+                _foldersLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _programsTabItem && !_programsLoaded)
+            {
+                RefreshPrograms();
+                _programsLoaded = true;
+            }
+            else if (_mainTabControl.SelectedItem == _systemSettingsTabItem && !_systemSettingsLoaded)
+            {
+                _systemSettingsLoaded = true;
+                await RefreshPageFileInfoAsync();
+            }
+            else if (_mainTabControl.SelectedItem == _processesTabItem && !_processesLoaded)
+            {
+                RefreshProcesses();
+                _processesLoaded = true;
             }
             else if (_mainTabControl.SelectedItem == _startupTabItem && !_startupLoaded)
             {
