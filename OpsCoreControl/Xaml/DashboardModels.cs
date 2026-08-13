@@ -33,6 +33,14 @@ namespace OpsCoreControl
         public string Description { get; set; }
     }
 
+    public class PageFileSnapshot
+    {
+        public string Path { get; set; }
+        public uint AllocatedMb { get; set; }
+        public uint CurrentUsageMb { get; set; }
+        public uint PeakUsageMb { get; set; }
+    }
+
     // Снимок состояния WiFi.
     public class WifiSnapshot
     {
@@ -50,6 +58,8 @@ namespace OpsCoreControl
         public int ProcessCount { get; set; }
         public string Battery { get; set; }
         public string PublicIp { get; set; }
+        public string OsVersion { get; set; }
+        public string Architecture { get; set; }
     }
 
     // Полный снапшот дашборда: всё, что показывается на панели мониторинга.
@@ -66,6 +76,7 @@ namespace OpsCoreControl
         public WifiSnapshot Wifi { get; set; } = new WifiSnapshot();
         public List<AdapterSnapshot> Adapters { get; set; } = new List<AdapterSnapshot>();
         public List<UsbSnapshot> Usb { get; set; } = new List<UsbSnapshot>();
+        public List<PageFileSnapshot> PageFiles { get; set; } = new List<PageFileSnapshot>();
         public SystemSnapshot System { get; set; } = new SystemSnapshot();
     }
 }

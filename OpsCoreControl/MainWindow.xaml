@@ -11,6 +11,27 @@
             <MenuItem x:Name="_darkThemeMenuItem" Header="Светлая тема" Click="_toggleTheme_Click"/>
         </Menu>
 
+        <!-- Компактное состояние ПК всегда видно и не отнимает рабочую высоту. -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource PanelBg}"
+                BorderBrush="{DynamicResource BorderBr}" BorderThickness="0,0,0,1" Padding="8,5">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right" Content="Подробнее…" Click="_showSystemStatus_Click" Margin="10,0,0,0"/>
+                <WrapPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="_statusPcText" Text="ПК: —" FontWeight="SemiBold"/>
+                    <TextBlock Text="  │  "/>
+                    <TextBlock x:Name="_statusCpuText" Text="CPU: —"/>
+                    <TextBlock Text="  │  "/>
+                    <TextBlock x:Name="_statusRamText" Text="RAM: —"/>
+                    <TextBlock Text="  │  "/>
+                    <TextBlock x:Name="_statusDiskText" Text="C: —"/>
+                    <TextBlock Text="  │  "/>
+                    <TextBlock x:Name="_statusNetworkText" Text="Сеть: —"/>
+                    <TextBlock Text="  │  "/>
+                    <TextBlock x:Name="_statusUptimeText" Text="Uptime: —"/>
+                </WrapPanel>
+            </DockPanel>
+        </Border>
+
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -31,8 +52,10 @@
                             <GroupBox Header="Система">
                                 <StackPanel>
                                     <Button x:Name="_restartPrintSpoolerButton" Content="Перезапустить Print Spooler" Click="_restartPrintSpoolerButton_Click" Width="185"/>
-                                    <Button x:Name="_rebootPC" Content="Перезагрузка ПК" Click="_rebootPC_Click" Width="185"/>
-                                    <Button x:Name="_shutdownPC" Content="Выключение ПК" Click="_shutdownPC_Click" Width="185"/>
+                                    <Separator Margin="2,8,2,4"/>
+                                    <TextBlock Text="Питание" Margin="4,0,0,2" FontWeight="SemiBold"/>
+                                    <Button x:Name="_rebootPC" Content="Перезагрузка ПК" Click="_rebootPC_Click" Width="185" Style="{StaticResource DangerButton}"/>
+                                    <Button x:Name="_shutdownPC" Content="Выключение ПК" Click="_shutdownPC_Click" Width="185" Style="{StaticResource DangerButton}"/>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Запуск процесса">
@@ -55,20 +78,21 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <WrapPanel Grid.Row="0">
+                                <WrapPanel Grid.Row="0" Margin="0,0,0,4">
                                     <Button x:Name="_refreshServicesButton" Content="Обновить" Click="_refreshServicesButton_Click"/>
-                                    <Button x:Name="_startServiceButton" Content="Старт" Click="_startServiceButton_Click"/>
-                                    <Button x:Name="_stopServiceButton" Content="Стоп" Click="_stopServiceButton_Click"/>
-                                    <Button x:Name="_restartServiceButton" Content="Рестарт" Click="_restartServiceButton_Click"/>
+                                    <Button x:Name="_startServiceButton" Content="Запустить" Click="_startServiceButton_Click" IsEnabled="False"/>
+                                    <Button x:Name="_stopServiceButton" Content="Остановить" Click="_stopServiceButton_Click" IsEnabled="False"/>
+                                    <Button x:Name="_restartServiceButton" Content="Перезапустить" Click="_restartServiceButton_Click" IsEnabled="False"/>
+                                    <Label Content="Тип запуска:" VerticalContentAlignment="Center" Margin="8,0,0,0"/>
                                     <ComboBox x:Name="_startupTypeComboBox" Width="110" SelectedIndex="0">
                                         <ComboBoxItem Content="Automatic" Tag="2"/>
                                         <ComboBoxItem Content="Manual" Tag="3"/>
                                         <ComboBoxItem Content="Disabled" Tag="4"/>
                                     </ComboBox>
-                                    <Button x:Name="_setStartupTypeButton" Content="Тип запуска" Click="_setStartupTypeButton_Click"/>
+                                    <Button x:Name="_setStartupTypeButton" Content="Применить" Click="_setStartupTypeButton_Click" IsEnabled="False"/>
                                 </WrapPanel>
-                                <TextBox Grid.Row="1" x:Name="_searchServiceTextBox" TextChanged="_searchServiceTextBox_TextChanged"/>
-                                <ListBox Grid.Row="2" x:Name="_servicesListBox"/>
+                                <TextBox Grid.Row="1" x:Name="_searchServiceTextBox" ToolTip="Поиск службы по имени" TextChanged="_searchServiceTextBox_TextChanged"/>
+                                <ListBox Grid.Row="2" x:Name="_servicesListBox" SelectionChanged="_servicesListBox_SelectionChanged"/>
                             </Grid>
                         </GroupBox>
                     </Grid>
@@ -84,7 +108,7 @@
                         <GroupBox Grid.Column="0" Header="Профили пользователей">
                             <StackPanel>
                                 <Button x:Name="_showUsersProfilesButton" Content="Показать профили" Click="_showUsersProfiles_ClickAsync" Width="170"/>
-                                <Button x:Name="_deleteProfileButton" Content="Удалить профиль" Click="_deleteProfile_Click" Width="170"/>
+                                <Button x:Name="_deleteProfileButton" Content="Удалить профиль" Click="_deleteProfile_Click" Width="170" IsEnabled="False" Style="{StaticResource DangerButton}"/>
                             </StackPanel>
                         </GroupBox>
                         <GroupBox Grid.Column="1" Header="Список профилей">
@@ -116,8 +140,8 @@
                         <!-- Очистка папок -->
                         <GroupBox Grid.Row="0" Grid.Column="0" Header="Очистка папок">
                             <StackPanel>
-                                <Button x:Name="_cleanDownloadFolderButton" Content="Очистить «Загрузки»" Click="_cleanDownloadFolder_Click"/>
-                                <Button x:Name="_cleadTempFolderButton" Content="Очистить Temp" Click="_cleanTempFolderButton_Click"/>
+                                <Button x:Name="_cleanDownloadFolderButton" Content="Очистить «Загрузки»" Click="_cleanDownloadFolder_Click" Style="{StaticResource DangerButton}"/>
+                                <Button x:Name="_cleadTempFolderButton" Content="Очистить Temp" Click="_cleanTempFolderButton_Click" Style="{StaticResource DangerButton}"/>
                             </StackPanel>
                         </GroupBox>
 
@@ -157,13 +181,13 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Button Grid.Row="0" x:Name="_findCurrentLogicalDiskButton" Content="Обновить список дисков" Click="_findCurrentLogicalDiskButton_Click"/>
-                                <ListBox Grid.Row="1" x:Name="_currentLogicalDiskListBox"/>
-                                <Button Grid.Row="2" x:Name="_deleteCurrentLogicaldiskButton" Content="Отключить выбранный диск" Click="_deleteCurrentLogicalDiskButton_Click"/>
+                                <ListBox Grid.Row="1" x:Name="_currentLogicalDiskListBox" SelectionChanged="_currentLogicalDiskListBox_SelectionChanged"/>
+                                <Button Grid.Row="2" x:Name="_deleteCurrentLogicaldiskButton" Content="Отключить выбранный диск" Click="_deleteCurrentLogicalDiskButton_Click" IsEnabled="False"/>
                                 <StackPanel Grid.Row="3">
                                     <Label Content="Новая метка выбранного диска:"/>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBox x:Name="_nameForOldLogicalDiskTextBox" Width="180"/>
-                                        <Button x:Name="_setNewNameLogicalDiskButton" Content="Переименовать" Click="_setNewNameLogicalDiskButton_Click"/>
+                                        <Button x:Name="_setNewNameLogicalDiskButton" Content="Переименовать" Click="_setNewNameLogicalDiskButton_Click" IsEnabled="False"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
@@ -180,12 +204,6 @@
                         </Grid.RowDefinitions>
 
                         <WrapPanel Grid.Row="0">
-                            <GroupBox Header="Диагностика (адрес из поля)">
-                                <StackPanel>
-                                    <Button x:Name="_nslookupButton" Content="nslookup" Click="_nslookupButton_Click" Width="150"/>
-                                    <Button x:Name="_pingContinuousButton" Content="ping -t (непрерывный)" Click="_pingContinuousButton_Click" Width="150"/>
-                                </StackPanel>
-                            </GroupBox>
                             <GroupBox Header="IP-конфигурация">
                                 <StackPanel>
                                     <Button x:Name="_ipReleaseButton" Content="ipconfig /release" Click="_ipReleaseButton_Click" Width="150"/>
@@ -195,29 +213,21 @@
                             </GroupBox>
                             <GroupBox Header="Состояние сети">
                                 <StackPanel>
-                                    <Button x:Name="_arpButton" Content="arp -a" Click="_arpButton_Click" Width="150"/>
-                                    <Button x:Name="_routePrintButton" Content="route print" Click="_routePrintButton_Click" Width="150"/>
-                                    <Button x:Name="_getmacButton" Content="getmac /v" Click="_getmacButton_Click" Width="150"/>
+                                    <Button x:Name="_arpButton" Content="arp -a — таблица ARP" Click="_arpButton_Click" Width="185"/>
+                                    <Button x:Name="_routePrintButton" Content="route print — маршруты" Click="_routePrintButton_Click" Width="185"/>
+                                    <Button x:Name="_getmacButton" Content="getmac /v — MAC-адреса" Click="_getmacButton_Click" Width="185"/>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Wi-Fi">
                                 <StackPanel>
-                                    <Button x:Name="_wlanInterfacesButton" Content="wlan show interfaces" Click="_wlanInterfacesButton_Click" Width="150"/>
-                                    <Button x:Name="_wlanProfilesButton" Content="wlan show profiles" Click="_wlanProfilesButton_Click" Width="150"/>
-                                    <Button x:Name="_wlanDriversButton" Content="wlan show drivers" Click="_wlanDriversButton_Click" Width="150"/>
+                                    <Button x:Name="_wlanInterfacesButton" Content="Состояние Wi-Fi" ToolTip="wlan show interfaces" Click="_wlanInterfacesButton_Click" Width="160"/>
+                                    <Button x:Name="_wlanProfilesButton" Content="Профили Wi-Fi" ToolTip="wlan show profiles" Click="_wlanProfilesButton_Click" Width="160"/>
+                                    <Button x:Name="_wlanDriversButton" Content="Драйвер Wi-Fi" ToolTip="wlan show drivers" Click="_wlanDriversButton_Click" Width="160"/>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Адаптеры">
                                 <StackPanel>
-                                    <Button x:Name="_showNetInterfacesButton" Content="show interface" Click="_showNetInterfacesButton_Click" Width="150"/>
-                                </StackPanel>
-                            </GroupBox>
-                            <GroupBox Header="Восстановление системы">
-                                <StackPanel>
-                                    <Button x:Name="_sfcScannowButton" Content="sfc /scannow" Click="_sfcScannowButton_Click" Width="170"/>
-                                    <Button x:Name="_dismCheckHealthButton" Content="DISM CheckHealth" Click="_dismCheckHealthButton_Click" Width="170"/>
-                                    <Button x:Name="_dismScanHealthButton" Content="DISM ScanHealth" Click="_dismScanHealthButton_Click" Width="170"/>
-                                    <Button x:Name="_dismRestoreHealthButton" Content="DISM RestoreHealth" Click="_dismRestoreHealthButton_Click" Width="170"/>
+                                    <Button x:Name="_showNetInterfacesButton" Content="Список адаптеров" ToolTip="netsh interface show interface" Click="_showNetInterfacesButton_Click" Width="150"/>
                                 </StackPanel>
                             </GroupBox>
                         </WrapPanel>
@@ -237,8 +247,9 @@
                                     <WrapPanel Grid.Row="0">
                                         <Button x:Name="_showIpconfigButton" Content="ipconfig /all" Click="_showIpconfigButton_Click"/>
                                         <Button x:Name="_clearOutputNetworkConsoleTextBox" Content="Очистить консоль" Click="_clearOutputNetworkConsoleTextBox_Click"/>
-                                        <Button x:Name="_stopOutputButton" Content="Остановить" Click="_stopOutputButton_Click"/>
-                                        <Button x:Name="_ResetNetworkButton" Content="Сброс сети" Click="_ResetNetwork_Click"/>
+                                        <Button x:Name="_stopOutputButton" Content="Остановить" Click="_stopOutputButton_Click" IsEnabled="False"/>
+                                        <TextBlock x:Name="_networkCommandStatusText" Text="Готово" Margin="8,0" VerticalAlignment="Center"/>
+                                        <Button x:Name="_resetNetworkButton" Content="Сброс сети" Click="_resetNetwork_Click" Style="{StaticResource DangerButton}"/>
                                     </WrapPanel>
                                     <TextBox Grid.Row="1" x:Name="_outputNetworkConsoleTextBox"
                              IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap"
@@ -247,13 +258,16 @@
                                 </Grid>
                             </GroupBox>
 
-                            <GroupBox Grid.Column="1" Header="По адресу">
+                            <GroupBox Grid.Column="1" Header="Диагностика узла">
                                 <StackPanel>
-                                    <Label Content="IP-адрес:"/>
-                                    <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8" Width="150"/>
-                                    <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click" Width="150"/>
-                                    <Button x:Name="_startTrecertButton" Content="Tracert" Click="_startTrecertButton_Click" Width="150"/>
-                                    <Button x:Name="_clearipAddressTextBoxButton" Content="Очистить поле" Click="_clearIpAddressTextBoxButton_Click" Width="150"/>
+                                    <Label Content="Адрес или имя узла:"/>
+                                    <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8" Width="180"/>
+                                    <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click" Width="180"/>
+                                    <Button x:Name="_pingContinuousButton" Content="Непрерывный Ping (ping -t)" Click="_pingContinuousButton_Click" Width="180"/>
+                                    <Button x:Name="_startTrecertButton" Content="Tracert — трассировка" Click="_startTrecertButton_Click" Width="180"/>
+                                    <Button x:Name="_nslookupButton" Content="Nslookup — DNS-запрос" Click="_nslookupButton_Click" Width="180"/>
+                                    <Separator Margin="2,5"/>
+                                    <Button x:Name="_clearipAddressTextBoxButton" Content="Очистить поле" Click="_clearIpAddressTextBoxButton_Click" Width="180"/>
                                 </StackPanel>
                             </GroupBox>
                         </Grid>
@@ -285,10 +299,10 @@
                                 </Grid.RowDefinitions>
                                 <WrapPanel Grid.Row="0">
                                     <Button x:Name="_refreshInstalledProgramsButton" Content="Обновить список" Click="_refreshInstalledProgramsButton_Click"/>
-                                    <Button x:Name="_uninstallProgramButton" Content="Удалить выбранную" Click="_uninstallProgramButton_Click"/>
+                                    <Button x:Name="_uninstallProgramButton" Content="Удалить выбранную" Click="_uninstallProgramButton_Click" IsEnabled="False" Style="{StaticResource DangerButton}"/>
                                 </WrapPanel>
-                                <TextBox Grid.Row="1" x:Name="_searchProgramTextBox" TextChanged="_searchProgramTextBox_TextChanged"/>
-                                <ListBox Grid.Row="2" x:Name="_installedProgramsListBox"/>
+                                <TextBox Grid.Row="1" x:Name="_searchProgramTextBox" ToolTip="Поиск программы" TextChanged="_searchProgramTextBox_TextChanged"/>
+                                <ListBox Grid.Row="2" x:Name="_installedProgramsListBox" SelectionChanged="_installedProgramsListBox_SelectionChanged"/>
                             </Grid>
                         </GroupBox>
                     </Grid>
@@ -317,6 +331,14 @@
                                     <Button x:Name="_setMonitorBrightnessButton" Content="Установить яркость" Click="_setMonitorBrightnessButton_Click"/>
                                 </StackPanel>
                             </GroupBox>
+                            <GroupBox Header="Восстановление Windows">
+                                <StackPanel>
+                                    <Button x:Name="_sfcScannowButton" Content="SFC — проверить файлы" ToolTip="sfc /scannow" Click="_sfcScannowButton_Click" Width="190"/>
+                                    <Button x:Name="_dismCheckHealthButton" Content="DISM — быстрая проверка" ToolTip="DISM CheckHealth" Click="_dismCheckHealthButton_Click" Width="190"/>
+                                    <Button x:Name="_dismScanHealthButton" Content="DISM — полная проверка" ToolTip="DISM ScanHealth" Click="_dismScanHealthButton_Click" Width="190"/>
+                                    <Button x:Name="_dismRestoreHealthButton" Content="DISM — восстановить" ToolTip="DISM RestoreHealth" Click="_dismRestoreHealthButton_Click" Width="190"/>
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
 
                         <GroupBox Grid.Row="1" Header="Файл подкачки (pagefile)">
@@ -338,15 +360,15 @@
                                     </StackPanel>
                                     <StackPanel>
                                         <Label x:Name="_setVirtualRamLabel" Content="Диск:"/>
-                                        <ListBox x:Name="_setVirtualRamSelectedDiskListBox" Width="230" Height="48"/>
+                                        <ListBox x:Name="_setVirtualRamSelectedDiskListBox" Width="230" Height="48" SelectionChanged="_pageFileDisk_SelectionChanged"/>
                                     </StackPanel>
                                 </StackPanel>
                                 <WrapPanel Grid.Row="2">
                                     <Button x:Name="_setVirtualRamFindDisks" Content="Найти диски" Click="_setVirtualRamFindDisks_Click"/>
-                                    <Button x:Name="_setVirtualRamButton" Content="Установить размер" Click="_setVirtualRamButton_Click"/>
+                                    <Button x:Name="_setVirtualRamButton" Content="Установить размер" Click="_setVirtualRamButton_Click" IsEnabled="False"/>
                                     <Button x:Name="_refreshPageFileInfoButton" Content="Обновить" Click="_refreshPageFileInfoButton_Click"/>
-                                    <Button x:Name="_clearPageFileButton" Content="Очистить" Click="_clearPageFileButton_Click"/>
-                                    <Button x:Name="_setPageFileAutoButton" Content="По выбору системы" Click="_setPageFileAutoButton_Click"/>
+                                    <Button x:Name="_clearPageFileButton" Content="Очистить" Click="_clearPageFileButton_Click" IsEnabled="False" Style="{StaticResource DangerButton}"/>
+                                    <Button x:Name="_setPageFileAutoButton" Content="По выбору системы" Click="_setPageFileAutoButton_Click" IsEnabled="False"/>
                                 </WrapPanel>
                             </Grid>
                         </GroupBox>
@@ -400,10 +422,10 @@
                             </Grid.RowDefinitions>
                             <WrapPanel Grid.Row="0">
                                 <Button x:Name="_refreshProcessesButton" Content="Обновить" Click="_refreshProcessesButton_Click"/>
-                                <Button x:Name="_killProcessButton" Content="Завершить выбранный" Click="_killProcessButton_Click"/>
+                                <Button x:Name="_killProcessButton" Content="Завершить выбранный" Click="_killProcessButton_Click" IsEnabled="False" Style="{StaticResource DangerButton}"/>
                             </WrapPanel>
-                            <TextBox Grid.Row="1" x:Name="_searchProcessTextBox" TextChanged="_searchProcessTextBox_TextChanged"/>
-                            <ListBox Grid.Row="2" x:Name="_processesListBox"/>
+                            <TextBox Grid.Row="1" x:Name="_searchProcessTextBox" ToolTip="Поиск процесса по имени или PID" TextChanged="_searchProcessTextBox_TextChanged"/>
+                            <ListBox Grid.Row="2" x:Name="_processesListBox" SelectionChanged="_processesListBox_SelectionChanged"/>
                         </Grid>
                     </GroupBox>
                 </TabItem>
@@ -419,11 +441,11 @@
                             </Grid.RowDefinitions>
                             <WrapPanel Grid.Row="0">
                                 <Button x:Name="_refreshStartupButton" Content="Обновить" Click="_refreshStartupButton_Click"/>
-                                <Button x:Name="_enableStartupButton" Content="Включить" Click="_enableStartupButton_Click"/>
-                                <Button x:Name="_disableStartupButton" Content="Выключить" Click="_disableStartupButton_Click"/>
+                                <Button x:Name="_enableStartupButton" Content="Включить" Click="_enableStartupButton_Click" IsEnabled="False"/>
+                                <Button x:Name="_disableStartupButton" Content="Отключить" Click="_disableStartupButton_Click" IsEnabled="False"/>
                             </WrapPanel>
-                            <TextBox Grid.Row="1" x:Name="_searchStartupTextBox" TextChanged="_searchStartupTextBox_TextChanged"/>
-                            <ListBox Grid.Row="2" x:Name="_startupListBox"/>
+                            <TextBox Grid.Row="1" x:Name="_searchStartupTextBox" ToolTip="Поиск программы в автозагрузке" TextChanged="_searchStartupTextBox_TextChanged"/>
+                            <ListBox Grid.Row="2" x:Name="_startupListBox" SelectionChanged="_startupListBox_SelectionChanged"/>
                         </Grid>
                     </GroupBox>
                 </TabItem>
@@ -448,16 +470,9 @@
                 </TabItem>
             </TabControl>
 
-            <!-- ========== Низ: лог и дашборд ========== -->
+            <!-- ========== Низ: журнал на всю ширину ========== -->
             <Grid Grid.Row="1" Margin="4,2">
-                <Grid.ColumnDefinitions>
-                    <!-- Обе колонки звёздные: лог и дашборд растут по ширине вместе с окном. -->
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="1.4*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Лог: тянется по высоте панели, сам прокручивается вниз при новых строках. -->
-                <GroupBox Grid.Column="0" Header="Лог">
+                <GroupBox Header="Лог">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -479,39 +494,6 @@
                     </Grid>
                 </GroupBox>
 
-                <!-- Дашборд: краткая зона и диски видны всегда без прокрутки;
-         скролл появляется только внутри расширенной зоны, когда она раскрыта. -->
-                <GroupBox Grid.Column="1" Header="Дашборд">
-                    <StackPanel>
-                        <DockPanel LastChildFill="True">
-                            <ToggleButton x:Name="_dashboardToggleButton" DockPanel.Dock="Right"
-                              Content="ⓘ" Width="28" Height="26" VerticalAlignment="Top"
-                              Click="_dashboardToggleButton_Click"/>
-                            <StackPanel>
-                                <TextBlock x:Name="_dashPcUserText" Text="ПК: —"/>
-                                <TextBlock x:Name="_dashNetworkText" Text="WiFi: —"/>
-                                <TextBlock x:Name="_dashPerfText" Text="CPU: —"/>
-                            </StackPanel>
-                        </DockPanel>
-
-                        <TextBlock Text="Диски:" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                        <ListBox x:Name="_dashDisksListBox" Height="70" HorizontalAlignment="Stretch"/>
-
-                        <!-- Скролл только здесь и только когда зона раскрыта. -->
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <StackPanel x:Name="_extendedDashboardPanel" Visibility="Collapsed">
-                                <Separator Margin="0,6"/>
-                                <TextBlock Text="Система" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="_extSystemText"/>
-                                <TextBlock x:Name="_extDiskActivityText"/>
-                                <TextBlock Text="Сетевые адаптеры" FontWeight="SemiBold" Margin="0,6,0,0"/>
-                                <ListBox x:Name="_extAdaptersListBox" Height="86"/>
-                                <TextBlock Text="USB-устройства" FontWeight="SemiBold" Margin="0,6,0,0"/>
-                                <ListBox x:Name="_extUsbListBox" Height="100"/>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </StackPanel>
-                </GroupBox>
             </Grid>
         </Grid>
     </DockPanel>

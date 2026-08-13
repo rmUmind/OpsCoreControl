@@ -40,6 +40,7 @@ namespace OpsCoreControl
         private WifiSnapshot _wifi = new WifiSnapshot();
         private List<AdapterSnapshot> _adapters = new List<AdapterSnapshot>();
         private List<UsbSnapshot> _usb = new List<UsbSnapshot>();
+        private List<PageFileSnapshot> _pageFiles = new List<PageFileSnapshot>();
         private Dictionary<string, DiskMeta> _diskMeta = new Dictionary<string, DiskMeta>(StringComparer.OrdinalIgnoreCase);
         private string _battery = "—";
         private string _publicIp = "—";
@@ -107,6 +108,7 @@ namespace OpsCoreControl
             if (_tick == 1 || _tick % 10 == 0)     // ~раз в 10 с
             {
                 _usb = CollectUsb();
+                _pageFiles = CollectPageFiles();
             }
             if (_tick == 1 || _tick % 60 == 0)     // ~раз в минуту
             {
@@ -130,6 +132,7 @@ namespace OpsCoreControl
             data.Wifi = _wifi;
             data.Adapters = _adapters;
             data.Usb = _usb;
+            data.PageFiles = _pageFiles;
 
             Process[] procs = Process.GetProcesses();
             int processCount = procs.Length;
@@ -143,6 +146,8 @@ namespace OpsCoreControl
                 ProcessCount = processCount,
                 Battery = _battery,
                 PublicIp = _publicIp
+                ,OsVersion = Environment.OSVersion.VersionString
+                ,Architecture = Environment.Is64BitOperatingSystem ? "64-разрядная" : "32-разрядная"
             };
 
             return data;
@@ -316,6 +321,34 @@ namespace OpsCoreControl
             catch (Exception ex)
             {
                 Log.Add($"Не удалось получить USB-устройства: {ex.Message}", LogType.Error);
+            }
+            return result;
+        }
+
+        // Фактически выделенный и используемый файл подкачки по каждому диску.
+        private List<PageFileSnapshot> CollectPageFiles()
+        {
+            var result = new List<PageFileSnapshot>();
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher(
+                    "SELECT Name, AllocatedBaseSize, CurrentUsage, PeakUsage FROM Win32_PageFileUsage"))
+                {
+                    foreach (ManagementObject mo in searcher.Get())
+                    {
+                        result.Add(new PageFileSnapshot
+                        {
+                            Path = mo["Name"]?.ToString() ?? "—",
+                            AllocatedMb = Convert.ToUInt32(mo["AllocatedBaseSize"] ?? 0),
+                            CurrentUsageMb = Convert.ToUInt32(mo["CurrentUsage"] ?? 0),
+                            PeakUsageMb = Convert.ToUInt32(mo["PeakUsage"] ?? 0)
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить сведения о файле подкачки: {ex.Message}", LogType.Error);
             }
             return result;
         }

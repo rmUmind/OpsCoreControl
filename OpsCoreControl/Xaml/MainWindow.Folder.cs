@@ -10,12 +10,14 @@ namespace OpsCoreControl
         // Очищает папку «Загрузки».
         private async void _cleanDownloadFolder_Click(object sender, RoutedEventArgs e)
         {
+            if (MessageBox.Show("Удалить содержимое папки «Загрузки»?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             await _fileSystemManager.CleanDownloadFolder();
         }
 
         // Очищает временные папки.
         private async void _cleanTempFolderButton_Click(object sender, RoutedEventArgs e)
         {
+            if (MessageBox.Show("Очистить временные папки? Используемые файлы будут пропущены.", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             await _fileSystemManager.CleanTempFolder();
         }
 
@@ -100,6 +102,13 @@ namespace OpsCoreControl
             {
                 _currentLogicalDiskListBox.Items.Add(disk);
             }
+        }
+
+        private void _currentLogicalDiskListBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            bool selected = _currentLogicalDiskListBox.SelectedItem != null;
+            _deleteCurrentLogicaldiskButton.IsEnabled = selected;
+            _setNewNameLogicalDiskButton.IsEnabled = selected;
         }
     }
 }

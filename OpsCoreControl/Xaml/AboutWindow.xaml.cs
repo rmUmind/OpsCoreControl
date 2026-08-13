@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Windows;
+using System.Reflection;
 using static OpsCoreControl.Log;
 
 // Код окна «О программе»: показывает автора и открывает ссылку на GitHub.
@@ -14,6 +15,23 @@ namespace OpsCoreControl
         public AboutWindow()
         {
             InitializeComponent();
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+            _versionText.Text = $"Версия {version.Major}.{version.Minor}.{version.Build}";
+        }
+
+        private void _close_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void OpenUrl(string url, string successMessage)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                Log.Add(successMessage, LogType.Info);
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось открыть ссылку: {ex.Message}", LogType.Error);
+            }
         }
 
         // Открывает GitHub автора в браузере по умолчанию.

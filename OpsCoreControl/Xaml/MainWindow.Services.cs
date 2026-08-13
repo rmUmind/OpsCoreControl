@@ -50,6 +50,15 @@ namespace OpsCoreControl
             }
         }
 
+        private void _servicesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool selected = _servicesListBox.SelectedItem != null;
+            _startServiceButton.IsEnabled = selected;
+            _stopServiceButton.IsEnabled = selected;
+            _restartServiceButton.IsEnabled = selected;
+            _setStartupTypeButton.IsEnabled = selected;
+        }
+
         // Возвращает выбранную службу или null (с подсказкой в лог).
         private ServiceInfo SelectedService()
         {

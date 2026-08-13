@@ -31,6 +31,7 @@ namespace OpsCoreControl.HelperClasses
 
         public static event Action<string> OnOutputConsoleLine;    // пришла строка вывода
         public static event Action OnOutputConsoleComplete;        // команда завершилась
+        public static event Action<bool> OnStreamingStateChanged;  // началась/закончилась команда
 
         private static Process _currentProcess;        // текущий процесс, активный всегда один
         private static volatile bool _stopRequested;   // флаг досрочной остановки
@@ -62,6 +63,7 @@ namespace OpsCoreControl.HelperClasses
                 int exitCode = -1;
                 try { exitCode = ((Process)s).ExitCode; } catch { }
                 Log.Add($"Команда завершена: {fileName} (код выхода: {exitCode})", LogType.Info);
+                OnStreamingStateChanged?.Invoke(false);
                 OnOutputConsoleComplete?.Invoke();
             };
 
@@ -76,11 +78,13 @@ namespace OpsCoreControl.HelperClasses
             {
                 _currentProcess.Start();
                 _currentProcess.BeginOutputReadLine(); // включаем асинхронное чтение вывода
+                OnStreamingStateChanged?.Invoke(true);
                 Log.Add($"Процесс запущен, PID: {_currentProcess.Id}", LogType.Debug);
             }
             catch (Exception ex)
             {
                 Log.Add($"Не удалось запустить команду {fileName}: {ex.Message}", LogType.Error);
+                OnStreamingStateChanged?.Invoke(false);
             }
         }
 

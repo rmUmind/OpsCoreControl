@@ -82,6 +82,7 @@ namespace OpsCoreControl
                 return;
             }
 
+            if (MessageBox.Show($"Установить файл подкачки на {selectedDisk}: {minMB}–{maxMB} МБ?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             await _fileSystemManager.SetPageFileSize(selectedDisk, minMB, maxMB);
 
             // Обновляем список после установки.
@@ -114,6 +115,7 @@ namespace OpsCoreControl
                 return;
             }
 
+            if (MessageBox.Show($"Удалить файл подкачки с диска {selectedDisk}?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             await _fileSystemManager.ClearPageFile(selectedDisk);
 
             await RefreshPageFileInfoAsync();
@@ -129,9 +131,18 @@ namespace OpsCoreControl
                 return;
             }
 
+            if (MessageBox.Show($"Включить системное управление файлом подкачки на диске {selectedDisk}?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
             await _fileSystemManager.SetPageFileAuto(selectedDisk);
 
             await RefreshPageFileInfoAsync();
+        }
+
+        private void _pageFileDisk_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            bool selected = _setVirtualRamSelectedDiskListBox.SelectedItem != null;
+            _setVirtualRamButton.IsEnabled = selected;
+            _clearPageFileButton.IsEnabled = selected;
+            _setPageFileAutoButton.IsEnabled = selected;
         }
     }
 }

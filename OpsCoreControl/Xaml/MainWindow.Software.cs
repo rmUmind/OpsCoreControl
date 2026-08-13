@@ -67,6 +67,11 @@ namespace OpsCoreControl
             }
         }
 
+        private void _installedProgramsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _uninstallProgramButton.IsEnabled = _installedProgramsListBox.SelectedItem != null;
+        }
+
         // Удаляет выбранную программу (с подтверждением).
         private void _uninstallProgramButton_Click(object sender, RoutedEventArgs e)
         {

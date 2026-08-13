@@ -10,6 +10,7 @@ namespace OpsCoreControl
         {
             _isDarkTheme = !_isDarkTheme;
             App.SetTheme(_isDarkTheme);
+            RefreshStatusMetricColors();
             ApplyWindowChromeTheme(_isDarkTheme);
             // Подпись показывает следующее действие; если хочешь статичный текст — убери эту строку.
             _darkThemeMenuItem.Header = _isDarkTheme ? "Светлая тема" : "Тёмная тема";

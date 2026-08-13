@@ -43,6 +43,13 @@ namespace OpsCoreControl
             }
         }
 
+        private void _startupListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool selected = _startupListBox.SelectedItem != null;
+            _enableStartupButton.IsEnabled = selected;
+            _disableStartupButton.IsEnabled = selected;
+        }
+
         private void _enableStartupButton_Click(object sender, RoutedEventArgs e) => SetStartupState(true);
         private void _disableStartupButton_Click(object sender, RoutedEventArgs e) => SetStartupState(false);
 

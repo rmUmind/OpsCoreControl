@@ -47,6 +47,11 @@ namespace OpsCoreControl
             }
         }
 
+        private void _processesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _killProcessButton.IsEnabled = _processesListBox.SelectedItem != null;
+        }
+
         // Завершает выбранный процесс (с подтверждением).
         private void _killProcessButton_Click(object sender, RoutedEventArgs e)
         {

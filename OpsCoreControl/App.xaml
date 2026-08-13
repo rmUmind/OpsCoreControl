@@ -15,6 +15,8 @@
         <SolidColorBrush x:Key="InputBg" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="ListBg" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="AccentFg" Color="#0067C0"/>
+        <SolidColorBrush x:Key="DangerBorder" Color="#B94A48"/>
+        <SolidColorBrush x:Key="DangerBg" Color="#F3D7D7"/>
 
         <!-- Кнопка: плоская, без скруглений. -->
         <Style TargetType="Button">
@@ -46,6 +48,12 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Опасные системные действия выделены сдержанно, без яркой заливки. -->
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}"/>
+            <Setter Property="Background" Value="{DynamicResource DangerBg}"/>
         </Style>
 
         <!-- Переключатель (кнопка-флажок). -->

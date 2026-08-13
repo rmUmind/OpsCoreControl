@@ -65,6 +65,7 @@ namespace OpsCoreControl
         private void _usersProfilesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _userProfilesCountLabel.Content = "Выбрано: " + _usersProfilesListBox.SelectedItems.Count.ToString();
+            _deleteProfileButton.IsEnabled = _usersProfilesListBox.SelectedItems.Count > 0;
         }
     }
 }

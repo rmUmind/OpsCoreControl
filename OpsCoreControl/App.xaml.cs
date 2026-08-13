@@ -39,6 +39,8 @@ namespace OpsCoreControl
                 r["InputBg"] = Brush("#2D2D30");
                 r["ListBg"] = Brush("#252526");
                 r["AccentFg"] = Brush("#4CC2FF");
+                r["DangerBorder"] = Brush("#B85450");
+                r["DangerBg"] = Brush("#4A2929");
             }
             else
             {
@@ -52,6 +54,8 @@ namespace OpsCoreControl
                 r["InputBg"] = Brush("#FFFFFF");
                 r["ListBg"] = Brush("#FFFFFF");
                 r["AccentFg"] = Brush("#0067C0");
+                r["DangerBorder"] = Brush("#B94A48");
+                r["DangerBg"] = Brush("#F3D7D7");
             }
         }
 

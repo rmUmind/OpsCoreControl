@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
 using static OpsCoreControl.Log;
 
 // Главная часть окна: создание менеджеров, подписка на дашборд и лог,
@@ -47,16 +48,10 @@ namespace OpsCoreControl
         // Высота нижней панели логов в свёрнутом режиме (должна совпадать с Height в XAML).
         private const double LogRowCollapsed = 210;
 
-        // На сколько пикселей окно выросло из-за раскрытой расширенной зоны дашборда.
-        private double _dashAdd;
-
         // Раскрыта ли панель логов на всю высоту (кнопка «Показать все логи»).
         private bool _logExpanded;
-
-        // Анти-мерцание: перерисовываем списки только при изменении.
-        private List<string> _lastDisks = new List<string>();
-        private List<string> _lastAdapters = new List<string>();
-        private List<string> _lastUsb = new List<string>();
+        private DashboardData _latestDashboardData;
+        private SystemStatusWindow _systemStatusWindow;
 
         // Перекрашивает заголовок и рамку окна под тему через DWM.
         [DllImport("dwmapi.dll")]
@@ -127,6 +122,11 @@ namespace OpsCoreControl
                     _outputNetworkConsoleTextBox.AppendText(line + Environment.NewLine);
                 }));
             };
+            ConsoleHelper.OnStreamingStateChanged += running => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _stopOutputButton.IsEnabled = running;
+                _networkCommandStatusText.Text = running ? "Выполняется…" : "Готово";
+            }));
 
             // При закрытии окна останавливаем дашборд.
             this.Closed += (s, e) => _dashBoard.Dispose();
@@ -245,85 +245,49 @@ namespace OpsCoreControl
         // Отрисовывает дашборд из свежего снапшота (вызывается по событию Updated).
         private void RenderDashboard(DashboardData d)
         {
-            // Краткая зона.
-            _dashPcUserText.Text = $"ПК: {d.System.PcName}  •  Пользователь: {d.System.UserName}  •  Uptime: {d.System.Uptime}";
+            _latestDashboardData = d;
+            _statusPcText.Text = $"ПК: {d.System.PcName}";
+            _statusCpuText.Text = $"CPU: {d.CpuPercent:F0}%";
+            _statusRamText.Text = $"RAM: {d.RamPercent:F0}%";
+            _statusCpuText.Foreground = LoadBrush(d.CpuPercent);
+            _statusRamText.Foreground = LoadBrush(d.RamPercent);
 
-            string wifi = d.Wifi.Connected ? $"WiFi: {d.Wifi.Ssid} ({d.Wifi.SignalPercent}%)" : "WiFi: нет";
+            DiskSnapshot systemDisk = d.Disks.FirstOrDefault(x => x.Letter.Equals("C:", StringComparison.OrdinalIgnoreCase));
+            _statusDiskText.Text = systemDisk == null ? "C: —" : $"C: {systemDisk.FreePercent:F0}% свободно";
+
+            string wifi = d.Wifi.Connected ? $"Wi-Fi: {d.Wifi.Ssid} {d.Wifi.SignalPercent}%" : "Wi-Fi: нет";
             AdapterSnapshot active = d.Adapters.FirstOrDefault(a => a.Status == "Up" && a.Ip != "—");
             string ip = active != null ? active.Ip : "—";
-            string link = d.Adapters.Any(a => a.Status == "Up") ? "Up" : "Down";
-            _dashNetworkText.Text = $"{wifi}  •  IP: {ip}  •  Линк: {link}";
-
-            _dashPerfText.Text = $"CPU: {d.CpuPercent:F0}%  •  RAM: {d.RamPercent:F0}% ({d.RamUsedMb:F0}/{d.RamTotalMb:F0} МБ)  •  VRAM: {d.VramPercent:F0}%";
-
-            var diskLines = new List<string>();
-            foreach (DiskSnapshot disk in d.Disks)
-            {
-                string label = string.IsNullOrEmpty(disk.Label) ? "" : $" \"{disk.Label}\"";
-                string unc = (disk.Type == "Сетевой" && !string.IsNullOrEmpty(disk.Unc)) ? $"  {disk.Unc}" : "";
-                diskLines.Add($"{disk.Letter} [{disk.Type}]{label} — {disk.FreeGb:F0}/{disk.TotalGb:F0} ГБ ({disk.FreePercent:F0}%){unc}");
-            }
-            UpdateListBox(_dashDisksListBox, diskLines, ref _lastDisks);
-
-            // Расширенная зона.
-            _extSystemText.Text = $"Батарея: {d.System.Battery}  •  Процессов: {d.System.ProcessCount}  •  Публичный IP: {d.System.PublicIp}";
-            _extDiskActivityText.Text = $"Диск: чтение {d.DiskReadMbSec:F1} МБ/с, запись {d.DiskWriteMbSec:F1} МБ/с";
-
-            List<string> adapterLines = d.Adapters
-                .Select(a => $"{a.Name} [{a.Type}] {a.Status}  IP: {a.Ip}  {a.SpeedMbps} Мбит/с")
-                .ToList();
-            UpdateListBox(_extAdaptersListBox, adapterLines, ref _lastAdapters);
-
-            List<string> usbLines = d.Usb
-                .Select(u => string.IsNullOrEmpty(u.Description) ? u.Name : $"{u.Name} — {u.Description}")
-                .ToList();
-            UpdateListBox(_extUsbListBox, usbLines, ref _lastUsb);
+            _statusNetworkText.Text = $"{wifi}, IP: {ip}";
+            _statusUptimeText.Text = $"Uptime: {d.System.Uptime}";
+            _systemStatusWindow?.UpdateData(d);
         }
 
-        // Обновляет список, только если содержимое изменилось (чтобы не мерцало).
-        private void UpdateListBox(ListBox lb, List<string> items, ref List<string> cache)
+        private Brush LoadBrush(double percent)
         {
-            if (cache.SequenceEqual(items)) return;
-            cache = items;
-            lb.Items.Clear();
-            foreach (string it in items) lb.Items.Add(it);
+            if (percent >= 90) return Brushes.IndianRed;
+            if (percent >= 70) return Brushes.DarkOrange;
+            return (Brush)FindResource("TextFg");
         }
 
-        // Раскрывает расширенную зону дашборда и расширяет окно под неё,
-        // чтобы зона показывалась целиком без прокрутки (как и задумано).
-        private void _dashboardToggleButton_Click(object sender, RoutedEventArgs e)
+        // После смены темы сразу заменяет сохранённые кисти метрик, не дожидаясь нового тика.
+        private void RefreshStatusMetricColors()
         {
-            bool expand = _dashboardToggleButton.IsChecked == true;
-            _extendedDashboardPanel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+            if (_latestDashboardData == null) return;
+            _statusCpuText.Foreground = LoadBrush(_latestDashboardData.CpuPercent);
+            _statusRamText.Foreground = LoadBrush(_latestDashboardData.RamPercent);
+        }
 
-            if (expand)
+        private void _showSystemStatus_Click(object sender, RoutedEventArgs e)
+        {
+            if (_systemStatusWindow == null)
             {
-                // Ждём раскладки, чтобы узнать реальную высоту раскрытой зоны.
-                _extendedDashboardPanel.UpdateLayout();
-                double need = _extendedDashboardPanel.ActualHeight + 14; // + разделитель и отступы
-                if (need <= 14) need = 300; // защита, если измерение не сработало
-
-                // Не даём окну вылезти за рабочую область экрана; остаток уйдёт в ScrollViewer.
-                double maxH = SystemParameters.WorkArea.Height - 40;
-                double add = Math.Min(need, Math.Max(0, maxH - Height));
-
-                _dashAdd = add;
-                Height += add;
-
-                // В свёрнутом режиме логов строка фиксирована — увеличиваем её вручную.
-                // В режиме «все логи» строка = *, она сама заберёт долю от новой высоты окна.
-                if (!_logExpanded)
-                    _logRow.Height = new GridLength(LogRowCollapsed + add);
+                _systemStatusWindow = new SystemStatusWindow { Owner = this };
+                _systemStatusWindow.Closed += (s, args) => _systemStatusWindow = null;
+                if (_latestDashboardData != null) _systemStatusWindow.UpdateData(_latestDashboardData);
+                _systemStatusWindow.Show();
             }
-            else
-            {
-                Height -= _dashAdd;
-
-                if (!_logExpanded)
-                    _logRow.Height = new GridLength(LogRowCollapsed);
-
-                _dashAdd = 0;
-            }
+            else _systemStatusWindow.Activate();
         }
 
         // URL страницы создания issue на GitHub (для Bug Report).
@@ -385,8 +349,7 @@ namespace OpsCoreControl
             }
             else
             {
-                // Возвращаем базу + добавку дашборда, если он сейчас раскрыт.
-                _logRow.Height = new GridLength(LogRowCollapsed + _dashAdd);
+                _logRow.Height = new GridLength(LogRowCollapsed);
                 _expandLogToggleButton.Content = "Показать все логи";
             }
         }

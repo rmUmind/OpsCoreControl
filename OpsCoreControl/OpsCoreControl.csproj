@@ -96,6 +96,9 @@
     <Compile Include="Xaml\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Xaml\SystemStatusWindow.xaml.cs">
+      <DependentUpon>SystemStatusWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Xaml\DashboardModels.cs" />
     <Compile Include="WorkingСlasses\FileSystemManager.cs" />
     <Compile Include="WorkingСlasses\PhysicalMonitorBrightnessController.cs" />
@@ -130,6 +133,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Xaml\AboutWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Xaml\SystemStatusWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

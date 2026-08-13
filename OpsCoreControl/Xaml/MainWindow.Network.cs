@@ -86,8 +86,9 @@ namespace OpsCoreControl
         }
 
         // Сброс сети (winsock / IP / DNS) — выполняет менеджер, кнопка красится по итогу.
-        private async void _ResetNetwork_Click(object sender, RoutedEventArgs e)
+        private async void _resetNetwork_Click(object sender, RoutedEventArgs e)
         {
+            if (MessageBox.Show("Сбросить сетевые настройки? Подключение к сети может временно пропасть.", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             await _networkManager.ResetNetwork();
         }
 
@@ -106,13 +107,17 @@ namespace OpsCoreControl
         // Пинг адреса из поля (запускаем ping напрямую, не через cmd /c).
         private void _startPingButton_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleHelper.RunStreaming("ping", $"{_ipAdressTextBox.Text} -t");
+            string host = _ipAdressTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для ping.", LogType.Error); return; }
+            ConsoleHelper.RunStreaming("ping", host);
         }
 
         // Трассировка маршрута до адреса из поля.
         private void _startTrecertButton_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleHelper.RunStreaming("tracert", _ipAdressTextBox.Text);
+            string host = _ipAdressTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для tracert.", LogType.Error); return; }
+            ConsoleHelper.RunStreaming("tracert", host);
         }
 
         // Очищает консоль вывода.
