@@ -1,4 +1,4 @@
-﻿using OpsCoreControl.WorkingСlasses;
+using OpsCoreControl.WorkingClasses;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -58,6 +58,12 @@ namespace OpsCoreControl
             if (!(_processesListBox.SelectedItem is ProcessInfo proc))
             {
                 Log.Add("Выберите процесс.", LogType.Error);
+                return;
+            }
+            if (!_processManager.CanTerminate(proc, out string reason))
+            {
+                Log.Add(reason, LogType.Error);
+                MessageBox.Show(reason, "Операция запрещена", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             MessageBoxResult confirm = MessageBox.Show($"Завершить '{proc.Name}' (PID {proc.Pid})?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);

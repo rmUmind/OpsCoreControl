@@ -6,7 +6,7 @@ using static OpsCoreControl.Log;
 
 // Класс для настройки параметров системы.
 // Пока умеет устанавливать время до блокировки экрана (скринсейвер с паролем).
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     internal class SystemSettingsManager
     {
@@ -32,7 +32,7 @@ namespace OpsCoreControl.WorkingСlasses
                 if (seconds < 60) seconds = 60; // минимум 1 минута
 
                 // Путь к стандартной чёрной заставке в System32 (без проверки File.Exists).
-                string screenSaverPath = @"C:\Windows\System32\scrnsave.scr";
+                string screenSaverPath = System.IO.Path.Combine(Environment.SystemDirectory, "scrnsave.scr");
 
                 Log.Add($"Устанавливаем скринсейвер: {screenSaverPath}, таймаут: {seconds} сек.", LogType.Info);
 

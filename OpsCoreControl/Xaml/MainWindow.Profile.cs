@@ -1,4 +1,4 @@
-﻿using OpsCoreControl.WorkingСlasses;
+using OpsCoreControl.WorkingClasses;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

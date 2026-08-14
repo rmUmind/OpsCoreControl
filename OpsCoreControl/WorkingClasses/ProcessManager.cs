@@ -5,7 +5,7 @@ using System.Linq;
 using static OpsCoreControl.Log;
 
 // Класс для работы с процессами: список запущенных процессов и завершение процесса по PID.
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     // Модель процесса для списка: PID, имя, занятая память.
     public class ProcessInfo
@@ -18,6 +18,21 @@ namespace OpsCoreControl.WorkingСlasses
 
     internal class ProcessManager
     {
+        private static readonly HashSet<string> ProtectedProcessNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "System", "Registry", "smss", "csrss", "wininit", "services", "lsass", "winlogon", "dwm"
+        };
+
+        public bool CanTerminate(ProcessInfo process, out string reason)
+        {
+            reason = null;
+            if (process == null) { reason = "Процесс не выбран."; return false; }
+            if (process.Pid == Process.GetCurrentProcess().Id) { reason = "Нельзя завершить само приложение OpsCoreControl."; return false; }
+            if (process.Pid <= 4 || ProtectedProcessNames.Contains(process.Name))
+            { reason = $"Процесс {process.Name} является критическим системным процессом."; return false; }
+            return true;
+        }
+
         // Возвращает список процессов, отсортированный по имени.
         public List<ProcessInfo> GetProcesses()
         {

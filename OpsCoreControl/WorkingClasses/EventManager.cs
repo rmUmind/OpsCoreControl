@@ -5,7 +5,7 @@ using static OpsCoreControl.Log;
 
 // Классы для работы с журналом событий Windows (System, Application):
 // модель записи и чтение последних записей с фильтром по типу.
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     // Модель одной записи журнала событий.
     public class EventLogEntryInfo

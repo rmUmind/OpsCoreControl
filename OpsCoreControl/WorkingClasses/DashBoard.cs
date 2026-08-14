@@ -17,13 +17,15 @@ using static OpsCoreControl.Log;
 // Класс дашборда: раз в секунду собирает данные о системе (CPU, RAM, диски, сеть, USB, батарея)
 // и шлёт снапшот подписчикам через событие Updated. Тяжёлые запросы (WMI, netsh, веб)
 // выполняет реже — раз в 5/10/60 секунд, чтобы не грузить систему.
-namespace OpsCoreControl
+namespace OpsCoreControl.WorkingClasses
 {
     internal class DashBoard : IDisposable
     {
         private const int IntervalSeconds = 1;   // базовый интервал; тяжёлые запросы реже
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly object _counterLock = new object();
+        private bool _disposed;
 
         // Счётчики производительности для быстрых метрик (CPU, RAM, диск).
         private readonly PerformanceCounter _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -80,6 +82,7 @@ namespace OpsCoreControl
                 try
                 {
                     DashboardData data = await Task.Run(() => Collect());
+                    if (data == null || _cts.IsCancellationRequested) break;
                     var dispatcher = Application.Current?.Dispatcher;
                     dispatcher?.BeginInvoke(new Action(() => Updated?.Invoke(data)));
                 }
@@ -115,15 +118,20 @@ namespace OpsCoreControl
                 _publicIp = CollectPublicIp();
             }
 
-            var data = new DashboardData
+            DashboardData data;
+            double availableMb;
+            lock (_counterLock)
             {
-                CpuPercent = _cpuCounter.NextValue(),
-                VramPercent = _vramCounter.NextValue(),
-                DiskReadMbSec = _diskReadCounter.NextValue() / (1024.0 * 1024.0),
-                DiskWriteMbSec = _diskWriteCounter.NextValue() / (1024.0 * 1024.0)
-            };
-
-            double availableMb = _ramAvailableCounter.NextValue();
+                if (_disposed) return null;
+                data = new DashboardData
+                {
+                    CpuPercent = _cpuCounter.NextValue(),
+                    VramPercent = _vramCounter.NextValue(),
+                    DiskReadMbSec = _diskReadCounter.NextValue() / (1024.0 * 1024.0),
+                    DiskWriteMbSec = _diskWriteCounter.NextValue() / (1024.0 * 1024.0)
+                };
+                availableMb = _ramAvailableCounter.NextValue();
+            }
             data.RamTotalMb = _totalRamMb;
             data.RamUsedMb = _totalRamMb - availableMb;
             data.RamPercent = _totalRamMb > 0 ? (float)(data.RamUsedMb / _totalRamMb * 100.0) : 0f;
@@ -432,9 +440,15 @@ namespace OpsCoreControl
             };
             using (Process p = Process.Start(psi))
             {
-                string output = p.StandardOutput.ReadToEnd();
-                p.WaitForExit(5000);
-                return output;
+                if (p == null) return string.Empty;
+                Task<string> outputTask = p.StandardOutput.ReadToEndAsync();
+                if (!p.WaitForExit(5000))
+                {
+                    try { p.Kill(); } catch { }
+                    try { p.WaitForExit(1000); } catch { }
+                    Log.Add($"Команда {fileName} превысила таймаут 5 секунд.", LogType.Error);
+                }
+                return outputTask.IsCompleted ? outputTask.Result : string.Empty;
             }
         }
 
@@ -469,12 +483,19 @@ namespace OpsCoreControl
         // Останавливает цикл сбора и освобождает счётчики.
         public void Dispose()
         {
+            if (_disposed) return;
             _cts.Cancel();
-            _cpuCounter.Dispose();
-            _ramAvailableCounter.Dispose();
-            _vramCounter.Dispose();
-            _diskReadCounter.Dispose();
-            _diskWriteCounter.Dispose();
+            lock (_counterLock)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                _cpuCounter.Dispose();
+                _ramAvailableCounter.Dispose();
+                _vramCounter.Dispose();
+                _diskReadCounter.Dispose();
+                _diskWriteCounter.Dispose();
+            }
+            _cts.Dispose();
             Log.Add("Дашборд остановлен.", LogType.Info);
         }
     }

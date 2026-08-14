@@ -25,3 +25,6 @@ packages/
 
 # Локальные настройки
 appsettings.local.json
+
+# Локальные релизные пакеты
+artifacts/

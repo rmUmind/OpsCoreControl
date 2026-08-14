@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static OpsCoreControl.Log;
 
 // Класс для работы с программами: список установленных (из реестра), удаление,
 // запуск встроенных установщиков и скачивание файлов.
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     // Модель установленной программы.
     public class InstalledProgram
@@ -83,17 +83,18 @@ namespace OpsCoreControl.WorkingСlasses
             }
             try
             {
-                string uninstall = program.UninstallString;
+                string uninstall = program.UninstallString.Trim();
                 if (uninstall.IndexOf("msiexec", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    uninstall = uninstall.Replace("/I", "/X").Replace("/i", "/x");   // MSI: install → uninstall
+                    uninstall = Regex.Replace(uninstall, @"(?i)(?<!\S)/i(?=\s|\{)", "/x");
                 }
+                if (!TrySplitCommandLine(uninstall, out string executable, out string arguments))
+                { Log.Add($"Некорректная строка удаления для '{program.Name}'.", LogType.Error); return false; }
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c {uninstall}",
-                    UseShellExecute = false,
-                    CreateNoWindow = false
+                    FileName = executable,
+                    Arguments = arguments,
+                    UseShellExecute = true
                 });
                 Log.Add($"Запущено удаление: {program.Name}", LogType.Info);
                 return true;
@@ -103,6 +104,28 @@ namespace OpsCoreControl.WorkingСlasses
                 Log.Add($"Ошибка удаления '{program.Name}': {ex.Message}", LogType.Error);
                 return false;
             }
+        }
+
+        private static bool TrySplitCommandLine(string commandLine, out string executable, out string arguments)
+        {
+            executable = null;
+            arguments = string.Empty;
+            if (string.IsNullOrWhiteSpace(commandLine)) return false;
+
+            if (commandLine[0] == '"')
+            {
+                int quote = commandLine.IndexOf('"', 1);
+                if (quote < 2) return false;
+                executable = commandLine.Substring(1, quote - 1);
+                arguments = commandLine.Substring(quote + 1).TrimStart();
+                return true;
+            }
+
+            Match match = Regex.Match(commandLine, @"^(.*?\.(?:exe|com|bat|cmd|msi))(?=\s|$)", RegexOptions.IgnoreCase);
+            if (!match.Success) return false;
+            executable = match.Groups[1].Value;
+            arguments = commandLine.Substring(match.Length).TrimStart();
+            return true;
         }
 
         // Достаёт встроенный установщик из ресурсов сборки и запускает его (с UAC).
@@ -200,43 +223,6 @@ namespace OpsCoreControl.WorkingСlasses
             catch (Exception ex)
             {
                 Log.Add($"Ошибка при запуске установщика: {ex.Message}", LogType.Error);
-                return false;
-            }
-        }
-
-        // Скачивает файл по URL в указанную папку.
-        public async Task<bool> DownloadFileAsync(string url, string directory, string fileName = null)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(fileName))
-                    fileName = Path.GetFileName(new Uri(url).AbsolutePath);
-
-                string destinationPath = Path.Combine(directory, fileName);
-
-                Log.Add($"Начинаем скачивание: {url} -> {destinationPath}", LogType.Info);
-
-                using (var client = new HttpClient())
-                {
-                    HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                    response.EnsureSuccessStatusCode();
-
-                    // Читаем из сети и пишем в файл потоком, не грузя всё в память.
-                    using (var networkStream = await response.Content.ReadAsStreamAsync())
-                    {
-                        using (var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                        {
-                            await networkStream.CopyToAsync(fileStream);
-                        }
-                    }
-                }
-
-                Log.Add($"Файл успешно сохранён: {destinationPath}", LogType.Success);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Add($"Ошибка при скачивании файла: {ex.Message}", LogType.Error);
                 return false;
             }
         }

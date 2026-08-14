@@ -29,9 +29,9 @@
     <ErrorReportUrl>https://github.com/rmUmind/OpsCoreControl/issues/new</ErrorReportUrl>
     <ProductName>OpsCoreControl</ProductName>
     <PublisherName>rmUmind</PublisherName>
-    <SuiteName>OpsCoreContor V1.0.0</SuiteName>
+    <SuiteName>OpsCoreControl 1.1.0</SuiteName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <ApplicationVersion>1.1.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -39,7 +39,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -54,6 +54,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -63,9 +64,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.CodeDom, Version=10.0.0.9, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.CodeDom.10.0.9\lib\net462\System.CodeDom.dll</HintPath>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Management" />
     <Reference Include="System.ServiceProcess" />
@@ -74,7 +72,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -89,10 +86,10 @@
     </ApplicationDefinition>
     <Compile Include="HelperClasses\ConsoleHelper.cs" />
     <Compile Include="HelperClasses\Log.cs" />
-    <Compile Include="WorkingСlasses\EventManager.cs" />
-    <Compile Include="WorkingСlasses\HostsManager.cs" />
-    <Compile Include="WorkingСlasses\ProcessManager.cs" />
-    <Compile Include="WorkingСlasses\StartupManager.cs" />
+    <Compile Include="WorkingClasses\EventManager.cs" />
+    <Compile Include="WorkingClasses\HostsManager.cs" />
+    <Compile Include="WorkingClasses\ProcessManager.cs" />
+    <Compile Include="WorkingClasses\StartupManager.cs" />
     <Compile Include="Xaml\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
@@ -100,13 +97,13 @@
       <DependentUpon>SystemStatusWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Xaml\DashboardModels.cs" />
-    <Compile Include="WorkingСlasses\FileSystemManager.cs" />
-    <Compile Include="WorkingСlasses\PhysicalMonitorBrightnessController.cs" />
-    <Compile Include="WorkingСlasses\NetworkManager.cs" />
-    <Compile Include="WorkingСlasses\ServiceManager.cs" />
-    <Compile Include="WorkingСlasses\SoftwareUpdateManager.cs" />
-    <Compile Include="WorkingСlasses\SystemSettingsManager.cs" />
-    <Compile Include="WorkingСlasses\UserProfileManager.cs" />
+    <Compile Include="WorkingClasses\FileSystemManager.cs" />
+    <Compile Include="WorkingClasses\PhysicalMonitorBrightnessController.cs" />
+    <Compile Include="WorkingClasses\NetworkManager.cs" />
+    <Compile Include="WorkingClasses\ServiceManager.cs" />
+    <Compile Include="WorkingClasses\SoftwareUpdateManager.cs" />
+    <Compile Include="WorkingClasses\SystemSettingsManager.cs" />
+    <Compile Include="WorkingClasses\UserProfileManager.cs" />
     <Compile Include="Xaml\AutoScrollBehavior.cs" />
     <Compile Include="Xaml\MainWindow.EventLog.cs" />
     <Compile Include="Xaml\MainWindow.Folder.cs" />
@@ -128,7 +125,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="WorkingСlasses\DashBoard.cs" />
+    <Compile Include="WorkingClasses\DashBoard.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -164,10 +161,7 @@
     </EmbeddedResource>
     <None Include=".gitignore" />
     <None Include="app.manifest" />
-    <None Include="packages.config" />
-    <EmbeddedResource Include="Programs\CiscoAnyConnect.msi">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Programs\CiscoAnyConnect.msi" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -192,15 +186,9 @@
     <Resource Include="353cc2be8c0711f1a569166de0f6c389.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Programs\CryptoPro.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Programs\CryptoProPlugin.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Programs\assistant.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Programs\CryptoPro.exe" />
+    <EmbeddedResource Include="Programs\CryptoProPlugin.exe" />
+    <EmbeddedResource Include="Programs\assistant.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

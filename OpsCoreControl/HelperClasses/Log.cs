@@ -75,7 +75,12 @@ namespace OpsCoreControl
             {
                 System.IO.Directory.CreateDirectory(LogDirectory);
                 foreach (string file in System.IO.Directory.GetFiles(LogDirectory, "OpsCoreControl_*.log"))
-                    if (System.IO.File.GetCreationTime(file) < DateTime.Now.AddDays(-30)) System.IO.File.Delete(file);
+                    if (System.IO.File.GetLastWriteTime(file) < DateTime.Now.AddDays(-30)) System.IO.File.Delete(file);
+                if (System.IO.File.Exists(LogFile) && new System.IO.FileInfo(LogFile).Length > 5 * 1024 * 1024)
+                {
+                    string archive = System.IO.Path.Combine(LogDirectory, $"OpsCoreControl_{DateTime.Now:yyyy-MM-dd_HHmmss}.log");
+                    System.IO.File.Move(LogFile, archive);
+                }
                 WriteToFile("Запуск приложения", LogEntryType.Info);
             }
             catch { }

@@ -8,6 +8,8 @@ using static OpsCoreControl.Log;
 // Класс управления яркостью мониторов через Win32 API (dxva2.dll).
 // Работает только с мониторами, поддерживающими DDC/CI (как правило, ноутбуки).
 // Основано на: https://stackoverflow.com/questions/4013622/adjust-screen-brightness-using-c-sharp
+namespace OpsCoreControl.WorkingClasses
+{
 public class PhysicalMonitorBrightnessController : IDisposable
 {
     #region DllImport
@@ -98,15 +100,6 @@ public class PhysicalMonitorBrightnessController : IDisposable
         }
     }
 
-    // Возвращает среднюю текущую яркость по всем мониторам.
-    public int Get(int v)
-    {
-        if (!Monitors.Any())
-        {
-            return -1;
-        }
-        return (int)Monitors.Average(d => d.CurrentValue);
-    }
     #endregion
 
     // Перечисляет мониторы и считывает их диапазон и текущую яркость.
@@ -201,4 +194,5 @@ public class PhysicalMonitorBrightnessController : IDisposable
         public uint CurrentValue { get; set; }
     }
     #endregion
+}
 }

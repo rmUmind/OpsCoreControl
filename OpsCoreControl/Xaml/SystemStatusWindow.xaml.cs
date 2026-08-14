@@ -13,15 +13,31 @@ namespace OpsCoreControl
     public partial class SystemStatusWindow : Window
     {
         private DashboardData _latestData;
-        public bool IsTopmostEnabled => _topmostCheckBox.IsChecked == true;
-
         public SystemStatusWindow()
         {
             InitializeComponent();
-            Width = Math.Max(MinWidth, Properties.Settings.Default.DashboardWidth);
-            Height = Math.Max(MinHeight, Properties.Settings.Default.DashboardHeight);
+            Width = ValidWindowSize(Properties.Settings.Default.DashboardWidth, MinWidth, 920);
+            Height = ValidWindowSize(Properties.Settings.Default.DashboardHeight, MinHeight, 820);
             _topmostCheckBox.IsChecked = Properties.Settings.Default.DashboardTopmost;
-            Closing += (s, e) => { Properties.Settings.Default.DashboardWidth = Width; Properties.Settings.Default.DashboardHeight = Height; Properties.Settings.Default.DashboardTopmost = Topmost; Properties.Settings.Default.Save(); };
+            Closing += (s, e) =>
+            {
+                try
+                {
+                    if (WindowState == WindowState.Normal)
+                    {
+                        Properties.Settings.Default.DashboardWidth = Width;
+                        Properties.Settings.Default.DashboardHeight = Height;
+                    }
+                    Properties.Settings.Default.DashboardTopmost = Topmost;
+                    Properties.Settings.Default.Save();
+                }
+                catch (Exception ex) { Log.Add($"Не удалось сохранить настройки дашборда: {ex.Message}", Log.LogType.Error); }
+            };
+        }
+
+        private static double ValidWindowSize(double value, double minimum, double fallback)
+        {
+            return double.IsNaN(value) || double.IsInfinity(value) || value < minimum ? fallback : value;
         }
 
         public void UpdateData(DashboardData d)

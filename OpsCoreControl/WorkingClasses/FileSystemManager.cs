@@ -10,7 +10,7 @@ using static OpsCoreControl.Log;
 // Класс для работы с файловой системой и дисками:
 // очистка папок (Загрузки, Temp), информация о дисках и SMART,
 // управление файлом подкачки, открытие сетевых путей.
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     internal class FileSystemManager
     {
@@ -314,6 +314,11 @@ namespace OpsCoreControl.WorkingСlasses
 
                 using (var key = Registry.LocalMachine.OpenSubKey(regPath))
                 {
+                    if (key == null)
+                    {
+                        result.Add("Сведения о файле подкачки недоступны: раздел реестра не найден.");
+                        return;
+                    }
                     if (key.GetValue("PagingFiles") is string[] entries)
                     {
                         foreach (string entry in entries)

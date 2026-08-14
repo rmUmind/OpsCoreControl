@@ -20,7 +20,26 @@ namespace OpsCoreControl
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             Log.InitializeFileLogging();
 
-            SetTheme(OpsCoreControl.Properties.Settings.Default.IsDarkTheme);
+            bool darkTheme = true;
+            try
+            {
+                darkTheme = OpsCoreControl.Properties.Settings.Default.IsDarkTheme;
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Пользовательские настройки повреждены, выполняется сброс: {ex.Message}", LogType.Error);
+                try
+                {
+                    OpsCoreControl.Properties.Settings.Default.Reset();
+                    OpsCoreControl.Properties.Settings.Default.Save();
+                }
+                catch (Exception resetEx)
+                {
+                    Log.Add($"Не удалось сбросить настройки: {resetEx.Message}", LogType.Error);
+                }
+            }
+
+            SetTheme(darkTheme);
         }
 
         // Меняет палитру приложения. Стили ссылаются на эти кисти через DynamicResource,

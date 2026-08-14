@@ -1,4 +1,5 @@
 using OpsCoreControl.HelperClasses;
+using System;
 using System.Windows;
 using static OpsCoreControl.Log;
 
@@ -9,21 +10,31 @@ namespace OpsCoreControl
 {
     public partial class MainWindow : Window
     {
+        private bool TryGetNetworkTarget(string operation, out string host)
+        {
+            host = _ipAddressTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(host) || host.Length > 253 || host[0] == '-'
+                || host.IndexOfAny(new[] { ' ', '\t', '\r', '\n', '"' }) >= 0)
+            {
+                Log.Add($"Укажите корректный IP-адрес или имя узла для {operation}.", LogType.Error);
+                return false;
+            }
+            return true;
+        }
+
         // ── Диагностика (нужен адрес из поля) ──
 
         // DNS-запрос: имя ↔ IP.
         private void _nslookupButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAddressTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для nslookup.", LogType.Error); return; }
+            if (!TryGetNetworkTarget("nslookup", out string host)) return;
             ConsoleHelper.RunStreaming("nslookup", host);
         }
 
         // Непрерывный пинг (останавливается кнопкой stop output).
         private void _pingContinuousButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAddressTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для ping.", LogType.Error); return; }
+            if (!TryGetNetworkTarget("ping", out string host)) return;
             ConsoleHelper.RunStreaming("ping", $"{host} -t");
         }
 
@@ -107,16 +118,14 @@ namespace OpsCoreControl
         // Пинг адреса из поля (запускаем ping напрямую, не через cmd /c).
         private void _startPingButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAddressTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для ping.", LogType.Error); return; }
+            if (!TryGetNetworkTarget("ping", out string host)) return;
             ConsoleHelper.RunStreaming("ping", host);
         }
 
         // Трассировка маршрута до адреса из поля.
         private void _startTracertButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAddressTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для tracert.", LogType.Error); return; }
+            if (!TryGetNetworkTarget("tracert", out string host)) return;
             ConsoleHelper.RunStreaming("tracert", host);
         }
 

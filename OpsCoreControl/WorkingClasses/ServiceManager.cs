@@ -11,7 +11,7 @@ using static OpsCoreControl.Log;
 // Класс для управления системой и службами:
 // перезагрузка/выключение ПК, запуск процессов, оснастки (SystemTool),
 // управление службами (старт/стоп/рестарт/тип запуска) и их список.
-namespace OpsCoreControl
+namespace OpsCoreControl.WorkingClasses
 {
     // Модель системной оснастки: имя для запуска и описание для списка.
     public class SystemTool
@@ -160,7 +160,7 @@ namespace OpsCoreControl
         // Перезапускает службу: остановка, затем запуск.
         public bool RestartService(string serviceName)
         {
-            StopService(serviceName);
+            if (!StopService(serviceName)) return false;
             return StartService(serviceName);
         }
 

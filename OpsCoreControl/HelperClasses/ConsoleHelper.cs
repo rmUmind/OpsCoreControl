@@ -21,7 +21,9 @@ namespace OpsCoreControl.HelperClasses
                 FileName = "cmd.exe",
                 Arguments = command,
                 UseShellExecute = false,
+                RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage),
                 StandardErrorEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage),
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden
@@ -30,7 +32,6 @@ namespace OpsCoreControl.HelperClasses
         }
 
         public static event Action<string> OnOutputConsoleLine;    // пришла строка вывода
-        public static event Action OnOutputConsoleComplete;        // команда завершилась
         public static event Action<bool> OnStreamingStateChanged;  // началась/закончилась команда
 
         private static Process _currentProcess;        // текущий процесс, активный всегда один
@@ -53,8 +54,10 @@ namespace OpsCoreControl.HelperClasses
                 Arguments = arguments,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage)
+                StandardOutputEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage),
+                StandardErrorEncoding = Encoding.GetEncoding(CultureInfo.CurrentCulture.TextInfo.OEMCodePage)
             };
 
             _currentProcess = new Process { StartInfo = psi };
@@ -68,7 +71,6 @@ namespace OpsCoreControl.HelperClasses
                 Log.Add($"Команда завершена: {fileName} (код выхода: {exitCode})", LogType.Info);
                 OnStreamingStateChanged?.Invoke(false);
                 CurrentCommand = "";
-                OnOutputConsoleComplete?.Invoke();
             };
 
             // срабатывает на каждую строку вывода
@@ -78,10 +80,17 @@ namespace OpsCoreControl.HelperClasses
                 if (e.Data != null) OnOutputConsoleLine?.Invoke(e.Data);
             };
 
+            _currentProcess.ErrorDataReceived += (s, e) =>
+            {
+                if (_stopRequested) return;
+                if (e.Data != null) OnOutputConsoleLine?.Invoke("[ошибка] " + e.Data);
+            };
+
             try
             {
                 _currentProcess.Start();
                 _currentProcess.BeginOutputReadLine(); // включаем асинхронное чтение вывода
+                _currentProcess.BeginErrorReadLine();
                 OnStreamingStateChanged?.Invoke(true);
                 Log.Add($"Процесс запущен, PID: {_currentProcess.Id}", LogType.Debug);
             }
@@ -160,20 +169,6 @@ namespace OpsCoreControl.HelperClasses
             }
         }
 
-        // Собирает ProcessStartInfo для запуска процесса с перехватом ошибок.
-        // Повышение прав (runas) тут невозможно: перехват stderr требует UseShellExecute = false,
-        // а runas работает только при UseShellExecute = true. Поэтому запускаем без повышения.
-        public static ProcessStartInfo StartProcess(string processName)
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = processName,
-                UseShellExecute = false,       // нужно для перехвата stderr
-                RedirectStandardError = true   // перехватываем ошибки
-            };
-            return psi;
-        }
-
         // Запускает процесс, ждёт завершения и логирует результат по коду выхода.
         // timeoutMs = -1 — ждать вечно, иначе убиваем процесс по таймауту.
         public static async Task<bool> LookForProcessEnd(
@@ -186,6 +181,8 @@ namespace OpsCoreControl.HelperClasses
                 using (var process = Process.Start(psi))
                 {
                     // ждём выхода: с таймаутом или бесконечно
+                    Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+                    Task<string> errorTask = process.StandardError.ReadToEndAsync();
                     bool exited = timeoutMs > 0
                         ? await Task.Run(() => process.WaitForExit(timeoutMs))
                         : await Task.Run(() => { process.WaitForExit(); return true; });
@@ -204,8 +201,10 @@ namespace OpsCoreControl.HelperClasses
                     }
 
                     // код выхода не 0 — читаем текст ошибки из stderr
-                    string error = process.StandardError.ReadToEnd();
-                    Log.Add($"{badOutcome}. {error}", LogType.Error);
+                    string error = await errorTask;
+                    string output = await outputTask;
+                    string detail = string.IsNullOrWhiteSpace(error) ? output : error;
+                    Log.Add($"{badOutcome}. {detail}".Trim(), LogType.Error);
                     return false;
                 }
             }

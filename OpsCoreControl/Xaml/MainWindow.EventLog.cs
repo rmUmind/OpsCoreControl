@@ -1,4 +1,4 @@
-﻿using OpsCoreControl.WorkingСlasses;
+using OpsCoreControl.WorkingClasses;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -36,9 +36,10 @@ namespace OpsCoreControl
             else if (filterTag == "Warning") filter = EventLogEntryType.Warning;
             else if (filterTag == "Information") filter = EventLogEntryType.Information;
 
-            int count = 50;
-            int.TryParse(_eventLogCountTextBox.Text, out count);
-            if (count <= 0) count = 50;
+            if (!int.TryParse(_eventLogCountTextBox.Text, out int count) || count <= 0)
+                count = 50;
+            count = System.Math.Min(count, 1000);
+            _eventLogCountTextBox.Text = count.ToString();
 
             var entries = _eventManager.GetRecentEventLog(logName, count, filter);
             _eventLogListBox.Items.Clear();

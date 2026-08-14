@@ -11,7 +11,7 @@ using static OpsCoreControl.Log;
 // Класс для работы с сетевыми дисками и сброса сети:
 // подключение/отключение дисков (net use), смена метки, список дисков,
 // видимость дисков между сессиями и сброс сети (winsock / IP / DNS).
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     internal class NetworkManager
     {
@@ -31,6 +31,12 @@ namespace OpsCoreControl.WorkingСlasses
                 uncPath = @"\\" + uncPath.TrimStart('\\');
             }
 
+            if (uncPath.IndexOf('"') >= 0 || uncPath.IndexOfAny(new[] { '\r', '\n' }) >= 0)
+            {
+                Log.Add("Сетевой путь содержит недопустимые символы.", LogType.Error);
+                return false;
+            }
+
             // Без имени шары подключить нельзя — только сервер не мапится.
             string withoutPrefix = uncPath.Substring(2);
             if (!withoutPrefix.Contains('\\'))
@@ -48,6 +54,12 @@ namespace OpsCoreControl.WorkingСlasses
                     return false;
                 }
             }
+            letter = letter.Trim();
+            if (letter.Length > 0 && (letter.Length > 2 || !char.IsLetter(letter[0]) || (letter.Length == 2 && letter[1] != ':')))
+            {
+                Log.Add("Буква диска должна иметь вид Z или Z:.", LogType.Error);
+                return false;
+            }
             string key = letter.EndsWith(":") ? letter : letter + ":";
 
             string command = $"/c net use {key} \"{uncPath}\" /persistent:{(persistent ? "yes" : "no")}";
@@ -61,6 +73,8 @@ namespace OpsCoreControl.WorkingСlasses
         // Отключает сетевой диск.
         public async Task<bool> UnmapNetworkDrive(string letter)
         {
+            if (string.IsNullOrWhiteSpace(letter) || letter.Length > 2 || !char.IsLetter(letter[0]))
+            { Log.Add("Некорректная буква диска.", LogType.Error); return false; }
             string key = letter.EndsWith(":") ? letter : letter + ":";
             string command = $"/c net use {key} /delete /y";
             var psi = ConsoleHelper.CmdConsoleCommand(command);
@@ -73,6 +87,10 @@ namespace OpsCoreControl.WorkingСlasses
         // Меняет метку диска (команда label).
         public async Task<bool> RenameLogicalDisk(string letter, string newName)
         {
+            if (string.IsNullOrWhiteSpace(letter) || letter.Length > 2 || !char.IsLetter(letter[0]))
+            { Log.Add("Некорректная буква диска.", LogType.Error); return false; }
+            if (string.IsNullOrWhiteSpace(newName) || newName.IndexOf('"') >= 0 || newName.IndexOfAny(new[] { '\r', '\n' }) >= 0)
+            { Log.Add("Метка диска содержит недопустимые символы.", LogType.Error); return false; }
             string key = letter.EndsWith(":") ? letter : letter + ":";
             string command = $"/c label {key} \"{newName}\"";
             var psi = ConsoleHelper.CmdConsoleCommand(command);
@@ -86,22 +104,29 @@ namespace OpsCoreControl.WorkingСlasses
         public List<string> GetLogicalDrives()
         {
             var result = new List<string>();
-            using (var searcher = new ManagementObjectSearcher(
-                "SELECT Name, DriveType, ProviderName, VolumeName FROM Win32_LogicalDisk"))
+            try
             {
-                foreach (ManagementObject drive in searcher.Get())
+                using (var searcher = new ManagementObjectSearcher(
+                    "SELECT Name, DriveType, ProviderName, VolumeName FROM Win32_LogicalDisk"))
                 {
-                    string name = drive["Name"]?.ToString();
-                    string type = GetDriveTypeName(drive["DriveType"]);
-                    string label = drive["VolumeName"]?.ToString();
-                    string provider = drive["ProviderName"]?.ToString();
+                    foreach (ManagementObject drive in searcher.Get())
+                    {
+                        string name = drive["Name"]?.ToString();
+                        string type = GetDriveTypeName(drive["DriveType"]);
+                        string label = drive["VolumeName"]?.ToString();
+                        string provider = drive["ProviderName"]?.ToString();
 
-                    string line = $"{name} [{type}]";
-                    if (!string.IsNullOrEmpty(label)) line += $" \"{label}\"";
-                    if (!string.IsNullOrEmpty(provider)) line += $" → {provider}";
+                        string line = $"{name} [{type}]";
+                        if (!string.IsNullOrEmpty(label)) line += $" \"{label}\"";
+                        if (!string.IsNullOrEmpty(provider)) line += $" → {provider}";
 
-                    result.Add(line);
+                        result.Add(line);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Add($"Не удалось получить список логических дисков: {ex.Message}", LogType.Error);
             }
             return result;
         }
@@ -113,8 +138,9 @@ namespace OpsCoreControl.WorkingСlasses
             const string regPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System";
             try
             {
-                using (var key = Registry.LocalMachine.OpenSubKey(regPath, writable: true))
+                using (var key = Registry.LocalMachine.CreateSubKey(regPath))
                 {
+                    if (key == null) { Log.Add("Не удалось открыть системный раздел реестра.", LogType.Error); return; }
                     if (key.GetValue("EnableLinkedConnections") is int value && value == 1)
                     {
                         return;   // уже включено

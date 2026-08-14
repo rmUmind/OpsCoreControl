@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using OpsCoreControl.WorkingClasses;
 using static OpsCoreControl.Log;
-using static OpsCoreControl.ServiceManager;
+using static OpsCoreControl.WorkingClasses.ServiceManager;
 
 // Часть главного окна: обработка вкладки Службы —
 // управление службами (старт/стоп/рестарт/тип запуска), перезагрузка и выключение ПК,

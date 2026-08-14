@@ -48,7 +48,28 @@ namespace OpsCoreControl
                 ClearValue(FontFamilyProperty);
             }
 
+            RefreshDangerButtonStyles(this, modern);
             RefreshImplicitStyles(this);
+        }
+
+        private void RefreshDangerButtonStyles(DependencyObject root, bool modern)
+        {
+            Style classicDanger = Application.Current.TryFindResource("DangerButton") as Style;
+            Style modernDanger = TryFindResource("ModernDangerButton") as Style;
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(root, i);
+                Button button = child as Button;
+                if (button != null)
+                {
+                    if (modern && ReferenceEquals(button.Style, classicDanger) && modernDanger != null)
+                        button.Style = modernDanger;
+                    else if (!modern && ReferenceEquals(button.Style, modernDanger))
+                        button.SetResourceReference(FrameworkElement.StyleProperty, "DangerButton");
+                }
+                RefreshDangerButtonStyles(child, modern);
+            }
         }
 
         private static void RefreshImplicitStyles(DependencyObject root)

@@ -6,7 +6,7 @@ using static OpsCoreControl.Log;
 
 // Класс для управления автозагрузкой: список программ из автозагрузки (HKCU/HKLM)
 // и их включение/выключение через механизм StartupApproved — так же, как Диспетчер задач.
-namespace OpsCoreControl.WorkingСlasses
+namespace OpsCoreControl.WorkingClasses
 {
     // Модель программы из автозагрузки.
     public class StartupProgram
