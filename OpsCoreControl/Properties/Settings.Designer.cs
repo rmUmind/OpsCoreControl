@@ -44,5 +44,7 @@ namespace OpsCoreControl.Properties
         public double DashboardWidth { get { return ((double)this["DashboardWidth"]); } set { this["DashboardWidth"] = value; } }
         [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("820")]
         public double DashboardHeight { get { return ((double)this["DashboardHeight"]); } set { this["DashboardHeight"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseModernInterface { get { return ((bool)this["UseModernInterface"]); } set { this["UseModernInterface"] = value; } }
     }
 }

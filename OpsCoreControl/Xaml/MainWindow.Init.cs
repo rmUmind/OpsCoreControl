@@ -45,6 +45,7 @@ namespace OpsCoreControl
         private bool _foldersLoaded;
         private bool _programsLoaded;
         private bool _isDarkTheme = Properties.Settings.Default.IsDarkTheme;
+        private bool _useModernInterface = Properties.Settings.Default.UseModernInterface;
         private bool _profilesLoaded;
         private bool _systemSettingsLoaded;
 
@@ -117,6 +118,7 @@ namespace OpsCoreControl
             if (Properties.Settings.Default.WindowLeft >= 0 && Properties.Settings.Default.WindowTop >= 0)
             { WindowStartupLocation = WindowStartupLocation.Manual; Left = Properties.Settings.Default.WindowLeft; Top = Properties.Settings.Default.WindowTop; }
             _darkThemeMenuItem.Header = _isDarkTheme ? "Светлая тема" : "Тёмная тема";
+            ApplyInterfaceMode(_useModernInterface);
             bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
             _statusAdminText.Text = isAdmin ? "Администратор: да" : "Администратор: нет";
             if (isAdmin)

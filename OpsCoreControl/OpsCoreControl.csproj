@@ -112,6 +112,7 @@
     <Compile Include="Xaml\MainWindow.Folder.cs" />
     <Compile Include="Xaml\MainWindow.Hosts.cs" />
     <Compile Include="Xaml\MainWindow.Init.cs" />
+    <Compile Include="Xaml\MainWindow.ModernUi.cs" />
     <Compile Include="Xaml\MainWindow.Network.cs" />
     <Compile Include="Xaml\MainWindow.Processes.cs" />
     <Compile Include="Xaml\MainWindow.Profile.cs" />
@@ -137,6 +138,10 @@
     </Page>
     <Page Include="Xaml\SystemStatusWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Xaml\ModernStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup>
