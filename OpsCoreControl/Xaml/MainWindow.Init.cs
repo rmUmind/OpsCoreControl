@@ -1,4 +1,4 @@
-﻿using OpsCoreControl.HelperClasses;
+using OpsCoreControl.HelperClasses;
 using OpsCoreControl.WorkingСlasses;
 using System;
 using System.Collections.Generic;
@@ -11,6 +11,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Security.Principal;
+using Microsoft.Win32;
+using System.IO;
 using static OpsCoreControl.Log;
 
 // Главная часть окна: создание менеджеров, подписка на дашборд и лог,
@@ -41,7 +44,7 @@ namespace OpsCoreControl
         private bool _servicesLoaded;
         private bool _foldersLoaded;
         private bool _programsLoaded;
-        private bool _isDarkTheme = true;
+        private bool _isDarkTheme = Properties.Settings.Default.IsDarkTheme;
         private bool _profilesLoaded;
         private bool _systemSettingsLoaded;
 
@@ -109,6 +112,18 @@ namespace OpsCoreControl
         public MainWindow()
         {
             InitializeComponent();
+            Width = Math.Max(MinWidth, Properties.Settings.Default.WindowWidth);
+            Height = Math.Max(MinHeight, Properties.Settings.Default.WindowHeight);
+            if (Properties.Settings.Default.WindowLeft >= 0 && Properties.Settings.Default.WindowTop >= 0)
+            { WindowStartupLocation = WindowStartupLocation.Manual; Left = Properties.Settings.Default.WindowLeft; Top = Properties.Settings.Default.WindowTop; }
+            _darkThemeMenuItem.Header = _isDarkTheme ? "Светлая тема" : "Тёмная тема";
+            bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+            _statusAdminText.Text = isAdmin ? "Администратор: да" : "Администратор: нет";
+            if (isAdmin)
+                _statusAdminText.SetResourceReference(TextBlock.ForegroundProperty, "TextFg");
+            else
+                _statusAdminText.Foreground = Brushes.IndianRed;
+            Closing += MainWindow_Closing;
 
             // Дашборд: создаём и подписываемся на его обновления.
             _dashBoard = new DashBoard();
@@ -143,6 +158,11 @@ namespace OpsCoreControl
             _processManager = new ProcessManager();
             _startupManager = new StartupManager();
             _hostsManager = new HostsManager();
+
+            // Восстанавливаем вкладку только после создания менеджеров: смена SelectedIndex
+            // синхронно вызывает SelectionChanged и может сразу начать загрузку данных.
+            if (Properties.Settings.Default.SelectedTab >= 0 && Properties.Settings.Default.SelectedTab < _mainTabControl.Items.Count)
+                _mainTabControl.SelectedIndex = Properties.Settings.Default.SelectedTab;
 
             // Красим заголовок/рамку после создания окна и после первой отрисовки.
             this.SourceInitialized += (s, e) => ApplyWindowChromeTheme(_isDarkTheme);
@@ -194,6 +214,7 @@ namespace OpsCoreControl
         {
             // Событие приходит и от внутренних списков/комбобоксов — реагируем только на смену вкладки.
             if (!(e.Source is TabControl)) return;
+            if (_serviceManager == null) return; // защита от событий во время InitializeComponent
 
             if (_mainTabControl.SelectedItem == _servicesTabItem && !_servicesLoaded)
             {
@@ -256,7 +277,7 @@ namespace OpsCoreControl
             _statusDiskText.Text = systemDisk == null ? "C: —" : $"C: {systemDisk.FreePercent:F0}% свободно";
 
             string wifi = d.Wifi.Connected ? $"Wi-Fi: {d.Wifi.Ssid} {d.Wifi.SignalPercent}%" : "Wi-Fi: нет";
-            AdapterSnapshot active = d.Adapters.FirstOrDefault(a => a.Status == "Up" && a.Ip != "—");
+            AdapterSnapshot active = d.Adapters.FirstOrDefault(a => a.Status == "Подключён" && a.Ip != "—");
             string ip = active != null ? active.Ip : "—";
             _statusNetworkText.Text = $"{wifi}, IP: {ip}";
             _statusUptimeText.Text = $"Uptime: {d.System.Uptime}";
@@ -299,6 +320,37 @@ namespace OpsCoreControl
             var about = new AboutWindow { Owner = this };
             about.ShowDialog();
         }
+
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (ConsoleHelper.IsStreaming && MessageBox.Show($"Команда «{ConsoleHelper.CurrentCommand}» ещё выполняется. Остановить её и закрыть приложение?", "Команда выполняется", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            { e.Cancel = true; return; }
+            if (ConsoleHelper.IsStreaming) ConsoleHelper.StopStreaming();
+            if (WindowState == WindowState.Normal) { Properties.Settings.Default.WindowLeft = Left; Properties.Settings.Default.WindowTop = Top; Properties.Settings.Default.WindowWidth = Width; Properties.Settings.Default.WindowHeight = Height; }
+            Properties.Settings.Default.SelectedTab = _mainTabControl.SelectedIndex;
+            Properties.Settings.Default.Save();
+        }
+
+        private void _runReadinessCheck_Click(object sender, RoutedEventArgs e)
+        {
+            var lines = new List<string>();
+            bool admin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+            lines.Add($"Права администратора: {(admin ? "OK" : "НЕТ")}");
+            lines.Add($"WMI: {(CheckWmi() ? "OK" : "ОШИБКА")}");
+            lines.Add($"PowerShell: {(FindExecutable("powershell.exe") ? "OK" : "НЕ НАЙДЕН")}");
+            lines.Add($"CMD: {(FindExecutable("cmd.exe") ? "OK" : "НЕ НАЙДЕН")}");
+            lines.Add($"Чтение HKLM: {(CheckRegistry() ? "OK" : "ОШИБКА")}");
+            lines.Add($"Сетевое подключение: {(System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable() ? "есть" : "нет")}");
+            string programs = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Programs");
+            lines.Add($"Встроенные установщики: {(Directory.Exists(programs) && Directory.GetFiles(programs).Length > 0 ? "OK" : "НЕ НАЙДЕНЫ")}");
+            string result = string.Join(Environment.NewLine, lines);
+            MessageBox.Show(result, "Проверка готовности", MessageBoxButton.OK, lines.Any(x => x.Contains("ОШИБКА") || x.Contains("НЕ НАЙДЕН")) ? MessageBoxImage.Warning : MessageBoxImage.Information);
+            Log.Add("Проверка готовности:" + Environment.NewLine + result, LogType.Info);
+        }
+
+        private bool CheckWmi() { try { using (var s = new System.Management.ManagementObjectSearcher("SELECT Caption FROM Win32_OperatingSystem")) { return s.Get().Count > 0; } } catch { return false; } }
+        private bool CheckRegistry() { try { using (var k = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")) return k != null; } catch { return false; } }
+        private bool FindExecutable(string name) { try { string p = Environment.GetEnvironmentVariable("PATH") ?? ""; return p.Split(';').Any(x => File.Exists(Path.Combine(x, name))); } catch { return false; } }
 
         // Открывает в браузере страницу создания отчёта об ошибке.
         private void _showBugReport_Click(object sender, RoutedEventArgs e)
@@ -355,3 +407,4 @@ namespace OpsCoreControl
         }
     }
 }
+

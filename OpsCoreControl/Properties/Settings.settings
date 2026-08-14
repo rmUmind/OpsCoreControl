@@ -3,5 +3,16 @@
   <Profiles>
     <Profile Name="(Default)" />
   </Profiles>
-  <Settings />
+  <Settings>
+    <Setting Name="IsDarkTheme" Type="System.Boolean" Scope="User"><Value Profile="(Default)">True</Value></Setting>
+    <Setting Name="WindowLeft" Type="System.Double" Scope="User"><Value Profile="(Default)">-1</Value></Setting>
+    <Setting Name="WindowTop" Type="System.Double" Scope="User"><Value Profile="(Default)">-1</Value></Setting>
+    <Setting Name="WindowWidth" Type="System.Double" Scope="User"><Value Profile="(Default)">1080</Value></Setting>
+    <Setting Name="WindowHeight" Type="System.Double" Scope="User"><Value Profile="(Default)">740</Value></Setting>
+    <Setting Name="SelectedTab" Type="System.Int32" Scope="User"><Value Profile="(Default)">0</Value></Setting>
+    <Setting Name="DashboardTopmost" Type="System.Boolean" Scope="User"><Value Profile="(Default)">False</Value></Setting>
+    <Setting Name="DashboardWidth" Type="System.Double" Scope="User"><Value Profile="(Default)">920</Value></Setting>
+    <Setting Name="DashboardHeight" Type="System.Double" Scope="User"><Value Profile="(Default)">820</Value></Setting>
+    <Setting Name="UseModernInterface" Type="System.Boolean" Scope="User"><Value Profile="(Default)">False</Value></Setting>
+  </Settings>
 </SettingsFile>

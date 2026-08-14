@@ -20,6 +20,8 @@
                 <CheckBox x:Name="_topmostCheckBox" Content="Поверх остальных окон" Margin="18,0,0,0"
                           VerticalAlignment="Center" Checked="_topmostChanged" Unchecked="_topmostChanged"/>
                 <Button Content="Обновить сейчас" Margin="18,0,0,0" Click="_refreshNow_Click"/>
+                <Button Content="Копировать сводку" Click="_copySummary_Click"/>
+                <Button Content="Сохранить отчёт" Click="_saveReport_Click"/>
             </StackPanel>
         </DockPanel>
 

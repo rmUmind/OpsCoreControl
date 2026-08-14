@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -278,7 +278,7 @@ namespace OpsCoreControl
                     catch { }
 
                     string type;
-                    if (nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211) type = "WiFi";
+                    if (nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211) type = "Wi-Fi";
                     else if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet) type = "Ethernet";
                     else type = nic.NetworkInterfaceType.ToString();
 
@@ -286,7 +286,7 @@ namespace OpsCoreControl
                     {
                         Name = nic.Name,
                         Type = type,
-                        Status = nic.OperationalStatus == OperationalStatus.Up ? "Up" : "Down",
+                        Status = nic.OperationalStatus == OperationalStatus.Up ? "Подключён" : "Отключён",
                         Ip = ip,
                         SpeedMbps = nic.Speed / 1000000
                     });
@@ -479,3 +479,4 @@ namespace OpsCoreControl
         }
     }
 }
+

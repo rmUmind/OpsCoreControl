@@ -4,16 +4,24 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
+using System.IO;
+using System.Text;
 
 namespace OpsCoreControl
 {
     public partial class SystemStatusWindow : Window
     {
         private DashboardData _latestData;
+        public bool IsTopmostEnabled => _topmostCheckBox.IsChecked == true;
 
         public SystemStatusWindow()
         {
             InitializeComponent();
+            Width = Math.Max(MinWidth, Properties.Settings.Default.DashboardWidth);
+            Height = Math.Max(MinHeight, Properties.Settings.Default.DashboardHeight);
+            _topmostCheckBox.IsChecked = Properties.Settings.Default.DashboardTopmost;
+            Closing += (s, e) => { Properties.Settings.Default.DashboardWidth = Width; Properties.Settings.Default.DashboardHeight = Height; Properties.Settings.Default.DashboardTopmost = Topmost; Properties.Settings.Default.Save(); };
         }
 
         public void UpdateData(DashboardData d)
@@ -26,7 +34,7 @@ namespace OpsCoreControl
         private void Render(DashboardData d)
         {
             double freeMb = Math.Max(0, d.RamTotalMb - d.RamUsedMb);
-            string localIp = d.Adapters.FirstOrDefault(x => x.Status == "Up" && x.Ip != "—")?.Ip ?? "—";
+            string localIp = d.Adapters.FirstOrDefault(x => x.Status == "Подключён" && x.Ip != "—")?.Ip ?? "—";
 
             _pcText.Text = $"ПК: {d.System.PcName}";
             _userText.Text = $"Пользователь: {d.System.UserName}";
@@ -65,11 +73,52 @@ namespace OpsCoreControl
         private void _topmostChanged(object sender, RoutedEventArgs e)
         {
             Topmost = _topmostCheckBox.IsChecked == true;
+            Properties.Settings.Default.DashboardTopmost = Topmost;
         }
 
         private void _refreshNow_Click(object sender, RoutedEventArgs e)
         {
             if (_latestData != null) Render(_latestData);
+        }
+
+        private string BuildSummary()
+        {
+            if (_latestData == null) return "Данные дашборда ещё не получены.";
+            DashboardData d = _latestData;
+            double freeMb = Math.Max(0, d.RamTotalMb - d.RamUsedMb);
+            var sb = new StringBuilder();
+            sb.AppendLine($"OpsCoreControl — диагностический отчёт ({DateTime.Now:yyyy-MM-dd HH:mm:ss})");
+            sb.AppendLine($"ПК: {d.System.PcName}; пользователь: {d.System.UserName}; uptime: {d.System.Uptime}");
+            sb.AppendLine($"Windows: {d.System.OsVersion} ({d.System.Architecture}); процессов: {d.System.ProcessCount}; батарея: {d.System.Battery}");
+            sb.AppendLine($"CPU: {d.CpuPercent:F0}%");
+            sb.AppendLine($"RAM: {d.RamUsedMb / 1024:F1} ГБ использовано, {freeMb / 1024:F1} ГБ свободно, {d.RamTotalMb / 1024:F1} ГБ всего ({d.RamPercent:F0}%)");
+            sb.AppendLine($"Виртуальная память: {d.VramPercent:F0}%");
+            sb.AppendLine($"Диск: чтение {d.DiskReadMbSec:F1} МБ/с, запись {d.DiskWriteMbSec:F1} МБ/с");
+            sb.AppendLine("Диски:");
+            foreach (var x in d.Disks) sb.AppendLine($"  {x.Letter} [{x.Type}] всего {x.TotalGb:F1} ГБ, свободно {x.FreeGb:F1} ГБ ({x.FreePercent:F0}%)");
+            sb.AppendLine("Файл подкачки:");
+            foreach (var x in d.PageFiles) sb.AppendLine($"  {x.Path}: выделено {x.AllocatedMb} МБ, используется {x.CurrentUsageMb} МБ, пик {x.PeakUsageMb} МБ");
+            sb.AppendLine($"Wi-Fi: {(d.Wifi.Connected ? d.Wifi.Ssid + " " + d.Wifi.SignalPercent + "%" : "нет подключения")}; публичный IP: {d.System.PublicIp}");
+            sb.AppendLine("Адаптеры:");
+            foreach (var x in d.Adapters) sb.AppendLine($"  {x.Name} [{x.Type}] {x.Status}, IP {x.Ip}, {x.SpeedMbps} Мбит/с");
+            sb.AppendLine("USB:");
+            foreach (var x in d.Usb) sb.AppendLine($"  {x.Name}" + (string.IsNullOrEmpty(x.Description) ? "" : $" — {x.Description}"));
+            sb.AppendLine($"Лог приложения: {Log.CurrentLogFile}");
+            return sb.ToString();
+        }
+
+        private void _copySummary_Click(object sender, RoutedEventArgs e)
+        {
+            Clipboard.SetText(BuildSummary());
+            Log.Add("Диагностическая сводка скопирована.", Log.LogType.Success);
+        }
+
+        private void _saveReport_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new SaveFileDialog { Filter = "Текстовый файл (*.txt)|*.txt", FileName = $"OpsCoreControl_{DateTime.Now:yyyyMMdd_HHmm}.txt" };
+            if (dialog.ShowDialog(this) != true) return;
+            File.WriteAllText(dialog.FileName, BuildSummary(), Encoding.UTF8);
+            Log.Add($"Диагностический отчёт сохранён: {dialog.FileName}", Log.LogType.Success);
         }
 
         // Один щелчок колеса прокручивает небольшой фиксированный шаг вместо целой страницы.
@@ -98,3 +147,4 @@ namespace OpsCoreControl
         }
     }
 }
+

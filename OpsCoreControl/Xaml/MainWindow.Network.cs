@@ -1,4 +1,4 @@
-﻿using OpsCoreControl.HelperClasses;
+using OpsCoreControl.HelperClasses;
 using System.Windows;
 using static OpsCoreControl.Log;
 
@@ -14,7 +14,7 @@ namespace OpsCoreControl
         // DNS-запрос: имя ↔ IP.
         private void _nslookupButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAdressTextBox.Text.Trim();
+            string host = _ipAddressTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для nslookup.", LogType.Error); return; }
             ConsoleHelper.RunStreaming("nslookup", host);
         }
@@ -22,7 +22,7 @@ namespace OpsCoreControl
         // Непрерывный пинг (останавливается кнопкой stop output).
         private void _pingContinuousButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAdressTextBox.Text.Trim();
+            string host = _ipAddressTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для ping.", LogType.Error); return; }
             ConsoleHelper.RunStreaming("ping", $"{host} -t");
         }
@@ -107,15 +107,15 @@ namespace OpsCoreControl
         // Пинг адреса из поля (запускаем ping напрямую, не через cmd /c).
         private void _startPingButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAdressTextBox.Text.Trim();
+            string host = _ipAddressTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для ping.", LogType.Error); return; }
             ConsoleHelper.RunStreaming("ping", host);
         }
 
         // Трассировка маршрута до адреса из поля.
-        private void _startTrecertButton_Click(object sender, RoutedEventArgs e)
+        private void _startTracertButton_Click(object sender, RoutedEventArgs e)
         {
-            string host = _ipAdressTextBox.Text.Trim();
+            string host = _ipAddressTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(host)) { Log.Add("Укажите адрес для tracert.", LogType.Error); return; }
             ConsoleHelper.RunStreaming("tracert", host);
         }
@@ -129,7 +129,8 @@ namespace OpsCoreControl
         // Очищает поле с адресом.
         private void _clearIpAddressTextBoxButton_Click(object sender, RoutedEventArgs e)
         {
-            _ipAdressTextBox.Clear();
+            _ipAddressTextBox.Clear();
         }
     }
 }
+

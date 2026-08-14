@@ -6,6 +6,9 @@ namespace OpsCoreControl
 {
     public static class Log
     {
+        private static readonly object FileLock = new object();
+        private static readonly string LogDirectory = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+        private static readonly string LogFile = System.IO.Path.Combine(LogDirectory, $"OpsCoreControl_{DateTime.Now:yyyy-MM-dd}.log");
         // Типы записей в логе.
         public enum LogEntryType
         {
@@ -39,6 +42,7 @@ namespace OpsCoreControl
         // Добавляет запись в лог: вызывает событие, соответствующее типу.
         public static void Add(string message, LogEntryType type)
         {
+            WriteToFile(message, type);
             switch (type)
             {
                 case LogEntryType.Message:
@@ -62,6 +66,24 @@ namespace OpsCoreControl
                 default:
                     break;
             }
+        }
+
+        public static string CurrentLogFile => LogFile;
+        public static void InitializeFileLogging()
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(LogDirectory);
+                foreach (string file in System.IO.Directory.GetFiles(LogDirectory, "OpsCoreControl_*.log"))
+                    if (System.IO.File.GetCreationTime(file) < DateTime.Now.AddDays(-30)) System.IO.File.Delete(file);
+                WriteToFile("Запуск приложения", LogEntryType.Info);
+            }
+            catch { }
+        }
+        private static void WriteToFile(string message, LogEntryType type)
+        {
+            try { lock (FileLock) { System.IO.Directory.CreateDirectory(LogDirectory); System.IO.File.AppendAllText(LogFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{type}] {message}{Environment.NewLine}"); } }
+            catch { }
         }
     }
 }

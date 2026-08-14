@@ -35,12 +35,15 @@ namespace OpsCoreControl.HelperClasses
 
         private static Process _currentProcess;        // текущий процесс, активный всегда один
         private static volatile bool _stopRequested;   // флаг досрочной остановки
+        public static bool IsStreaming => _currentProcess != null && !_currentProcess.HasExited;
+        public static string CurrentCommand { get; private set; } = "";
 
         // Запускает команду и стримит её вывод построчно через OnOutputConsoleLine.
         public static void RunStreaming(string fileName, string arguments)
         {
             KillCurrentProcess();          // сначала убиваем прошлый процесс
             _stopRequested = false;
+            CurrentCommand = $"{fileName} {arguments}".Trim();
 
             Log.Add($"Запуск команды: {fileName} {arguments}", LogType.Info);
 
@@ -64,6 +67,7 @@ namespace OpsCoreControl.HelperClasses
                 try { exitCode = ((Process)s).ExitCode; } catch { }
                 Log.Add($"Команда завершена: {fileName} (код выхода: {exitCode})", LogType.Info);
                 OnStreamingStateChanged?.Invoke(false);
+                CurrentCommand = "";
                 OnOutputConsoleComplete?.Invoke();
             };
 
@@ -85,6 +89,7 @@ namespace OpsCoreControl.HelperClasses
             {
                 Log.Add($"Не удалось запустить команду {fileName}: {ex.Message}", LogType.Error);
                 OnStreamingStateChanged?.Invoke(false);
+                CurrentCommand = "";
             }
         }
 

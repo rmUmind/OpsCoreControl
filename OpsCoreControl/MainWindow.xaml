@@ -5,10 +5,12 @@
         Title="OpsCoreControl" Height="740" Width="1080"
         Background="{DynamicResource WindowBg}">
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
+        <Menu x:Name="_topMenu" DockPanel.Dock="Top">
             <MenuItem Header="Инфо" Click="_showAbout_Click"/>
             <MenuItem Header="Bug Report" Click="_showBugReport_Click"/>
+            <MenuItem Header="Проверить готовность" Click="_runReadinessCheck_Click"/>
             <MenuItem x:Name="_darkThemeMenuItem" Header="Светлая тема" Click="_toggleTheme_Click"/>
+            <MenuItem x:Name="_interfaceModeMenuItem" Header="Современный интерфейс" Click="_toggleInterfaceMode_Click" ToolTip="Переключить классический и современный интерфейс"/>
         </Menu>
 
         <!-- Компактное состояние ПК всегда видно и не отнимает рабочую высоту. -->
@@ -17,6 +19,8 @@
             <DockPanel LastChildFill="True">
                 <Button DockPanel.Dock="Right" Content="Подробнее…" Click="_showSystemStatus_Click" Margin="10,0,0,0"/>
                 <WrapPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="_statusAdminText" Text="Администратор: —" FontWeight="SemiBold"/>
+                    <TextBlock Text="  │  "/>
                     <TextBlock x:Name="_statusPcText" Text="ПК: —" FontWeight="SemiBold"/>
                     <TextBlock Text="  │  "/>
                     <TextBlock x:Name="_statusCpuText" Text="CPU: —"/>
@@ -141,7 +145,7 @@
                         <GroupBox Grid.Row="0" Grid.Column="0" Header="Очистка папок">
                             <StackPanel>
                                 <Button x:Name="_cleanDownloadFolderButton" Content="Очистить «Загрузки»" Click="_cleanDownloadFolder_Click" Style="{StaticResource DangerButton}"/>
-                                <Button x:Name="_cleadTempFolderButton" Content="Очистить Temp" Click="_cleanTempFolderButton_Click" Style="{StaticResource DangerButton}"/>
+                                <Button x:Name="_cleanTempFolderButton" Content="Очистить Temp" Click="_cleanTempFolderButton_Click" Style="{StaticResource DangerButton}"/>
                             </StackPanel>
                         </GroupBox>
 
@@ -261,10 +265,10 @@
                             <GroupBox Grid.Column="1" Header="Диагностика узла">
                                 <StackPanel>
                                     <Label Content="Адрес или имя узла:"/>
-                                    <TextBox x:Name="_ipAdressTextBox" Text="8.8.8.8" Width="180"/>
+                                    <TextBox x:Name="_ipAddressTextBox" Text="8.8.8.8" Width="180"/>
                                     <Button x:Name="_startPingButton" Content="Ping" Click="_startPingButton_Click" Width="180"/>
                                     <Button x:Name="_pingContinuousButton" Content="Непрерывный Ping (ping -t)" Click="_pingContinuousButton_Click" Width="180"/>
-                                    <Button x:Name="_startTrecertButton" Content="Tracert — трассировка" Click="_startTrecertButton_Click" Width="180"/>
+                                    <Button x:Name="_startTracertButton" Content="Tracert — трассировка" Click="_startTracertButton_Click" Width="180"/>
                                     <Button x:Name="_nslookupButton" Content="Nslookup — DNS-запрос" Click="_nslookupButton_Click" Width="180"/>
                                     <Separator Margin="2,5"/>
                                     <Button x:Name="_clearipAddressTextBoxButton" Content="Очистить поле" Click="_clearIpAddressTextBoxButton_Click" Width="180"/>
@@ -287,6 +291,7 @@
                                 <Button x:Name="_downloadCryptoProButton" Content="Установить CryptoPro" Click="_downloadCryptoPro_Click" Width="210"/>
                                 <Button x:Name="_installCryptoProPluginButton" Content="Установить CryptoPro Plugin" Click="_installCryptoProPlugin_Click" Width="210"/>
                                 <Button x:Name="_installCiscoAnyConnectButton" Content="Установить Cisco AnyConnect" Click="_installCiscoAnyConnect_Click" Width="210"/>
+                                <Button x:Name="_installAssistantButton" Content="Установить Assistant" Click="_installAssistant_Click" Width="210"/>
                             </StackPanel>
                         </GroupBox>
 

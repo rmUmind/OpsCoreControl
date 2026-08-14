@@ -26,5 +26,23 @@ namespace OpsCoreControl.Properties
                 return defaultInstance;
             }
         }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool IsDarkTheme { get { return ((bool)this["IsDarkTheme"]); } set { this["IsDarkTheme"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public double WindowLeft { get { return ((double)this["WindowLeft"]); } set { this["WindowLeft"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public double WindowTop { get { return ((double)this["WindowTop"]); } set { this["WindowTop"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("1080")]
+        public double WindowWidth { get { return ((double)this["WindowWidth"]); } set { this["WindowWidth"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("740")]
+        public double WindowHeight { get { return ((double)this["WindowHeight"]); } set { this["WindowHeight"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int SelectedTab { get { return ((int)this["SelectedTab"]); } set { this["SelectedTab"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DashboardTopmost { get { return ((bool)this["DashboardTopmost"]); } set { this["DashboardTopmost"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("920")]
+        public double DashboardWidth { get { return ((double)this["DashboardWidth"]); } set { this["DashboardWidth"] = value; } }
+        [global::System.Configuration.UserScopedSettingAttribute()][global::System.Configuration.DefaultSettingValueAttribute("820")]
+        public double DashboardHeight { get { return ((double)this["DashboardHeight"]); } set { this["DashboardHeight"] = value; } }
     }
 }

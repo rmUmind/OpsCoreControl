@@ -67,6 +67,14 @@ namespace OpsCoreControl
             }
         }
 
+        // Извлекает и запускает встроенный установщик Assistant.
+        private async void _installAssistant_Click(object sender, RoutedEventArgs e)
+        {
+            await _softwareManager.RunEmbeddedInstallerAsync(
+                "OpsCoreControl.Programs.assistant.exe",
+                "assistant_installer.exe");
+        }
+
         private void _installedProgramsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _uninstallProgramButton.IsEnabled = _installedProgramsListBox.SelectedItem != null;

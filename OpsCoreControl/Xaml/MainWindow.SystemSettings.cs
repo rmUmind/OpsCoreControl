@@ -34,16 +34,16 @@ namespace OpsCoreControl
         // Ставит таймаут блокировки экрана (в минутах); при некорректном вводе — 10.
         private async void _setScreenLockTimerButton_Click(object sender, RoutedEventArgs e)
         {
-            int minutes;
-            if (!int.TryParse(_timeToScreenLockTimerTextBox.Text, out minutes)) { minutes = 10; }
+            if (!int.TryParse(_timeToScreenLockTimerTextBox.Text, out int minutes) || minutes <= 0 || minutes > 1440)
+            { Log.Add("Введите время блокировки от 1 до 1440 минут.", LogType.Error); _timeToScreenLockTimerTextBox.Focus(); return; }
             _systemSettingsManager.SetScreenLockTimeout(minutes);
         }
 
         // Ставит яркость монитора (0-100); при некорректном вводе — 100.
         private async void _setMonitorBrightnessButton_Click(object sender, RoutedEventArgs e)
         {
-            uint brightness;
-            if (!uint.TryParse(_setMonitorBrightnessTextBox.Text, out brightness)) { brightness = 100; }
+            if (!uint.TryParse(_setMonitorBrightnessTextBox.Text, out uint brightness) || brightness > 100)
+            { Log.Add("Введите яркость от 0 до 100.", LogType.Error); _setMonitorBrightnessTextBox.Focus(); return; }
             _monitorController.Set(brightness);
         }
 
