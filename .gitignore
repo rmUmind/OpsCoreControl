@@ -19,6 +19,11 @@ TestResults/
 *.dll
 *.exe
 
+# Встроенные установщики, необходимые для сборки OpsCoreControl
+!OpsCoreControl/Programs/CryptoPro.exe
+!OpsCoreControl/Programs/CryptoProPlugin.exe
+!OpsCoreControl/Programs/assistant.exe
+
 # NuGet
 packages/
 *.nupkg

@@ -24,7 +24,7 @@ namespace OpsCoreControl
         // Подключает сетевую шару как диск. Буква необязательна: если пусто — подберётся автоматически.
         private async void _mapLogicalDiskButton_Click(object sender, RoutedEventArgs e)
         {
-            string path = _setNetworkPathTextBox.Text;            // например, 10.19.120.10\mintrans
+            string path = _setNetworkPathTextBox.Text;            // например, \\server\share
             string letter = _setNameForNewLogicalDiskTextBox.Text; // пусто → авто
             await _networkManager.MapNetworkDrive(letter, path);
             RefreshLogicalDisks();

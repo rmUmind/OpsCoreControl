@@ -159,7 +159,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include=".gitignore" />
     <None Include="app.manifest" />
     <EmbeddedResource Include="Programs\CiscoAnyConnect.msi" />
     <None Include="Properties\Settings.settings">
